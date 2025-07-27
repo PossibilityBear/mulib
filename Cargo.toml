@@ -15,6 +15,7 @@ leptos_axum = { version = "0.8.0", optional = true }
 leptos_meta = { version = "0.8.0" }
 tokio = { version = "1", features = ["rt-multi-thread"], optional = true }
 wasm-bindgen = { version = "=0.2.100", optional = true }
+stylance = "0.7.0"
 
 [features]
 hydrate = [
@@ -31,6 +32,7 @@ ssr = [
     "leptos_router/ssr",
 ]
 
+
 # Defines a size-optimized profile for the WASM bundle in release mode
 [profile.wasm-release]
 inherits = "release"
@@ -46,12 +48,25 @@ output-name = "mulib"
 # The site root folder is where cargo-leptos generate all output. WARNING: all content of this folder will be erased on a rebuild. Use it in your server setup.
 site-root = "target/site"
 
+# folders in which stylance cli will look for css module files.
+# defaults to ["./src/"]
+folders = ["./src/", "./style/"]
+
+# Stylance output_dir, when set stylance cli will create folder named styalnce here
+# which will be populated with scss files
+output_dir = "target/site"
+
+# files ending with these extensions will be considered to be
+# css modules by stylance cli and will be included in the output bundle
+# defaults to [".module.scss", ".module.css"]
+extensions = [".module.scss", ".module.css"]
+
 # The site-root relative folder where all compiled output (JS, WASM and CSS) is written
 # Defaults to pkg
 site-pkg-dir = "pkg"
 
 # [Optional] The source CSS file. If it ends with .sass or .scss then it will be compiled by dart-sass into CSS. The CSS is optimized by Lightning CSS before being written to <site-root>/<site-pkg>/app.css
-style-file = "style/main.scss"
+style-file = "stylance/index.scss"
 # Assets source dir. All files found here will be copied and synchronized to site-root.
 # The assets-dir cannot have a sub directory with the same name/path as site-pkg-dir.
 #

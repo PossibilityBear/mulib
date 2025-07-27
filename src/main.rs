@@ -1,3 +1,6 @@
+pub mod components;
+
+
 
 #[cfg(feature = "ssr")]
 #[tokio::main]
@@ -6,7 +9,8 @@ async fn main() {
     use leptos::logging::log;
     use leptos::prelude::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
-    use mulib::app::*;
+    use crate::components::app::{shell, App};
+    // use mulib::app::*;
 
     let conf = get_configuration(None).unwrap();
     let addr = conf.leptos_options.site_addr;
