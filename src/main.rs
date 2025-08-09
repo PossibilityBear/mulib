@@ -1,5 +1,6 @@
 pub mod components;
-
+pub mod models;
+pub mod database;
 
 
 #[cfg(feature = "ssr")]
@@ -10,7 +11,19 @@ async fn main() {
     use leptos::prelude::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
     use crate::components::app::{shell, App};
+    use crate::database::utils::{
+        song_import::*,
+        db_connection::*,
+    };
+    use crate::database::commands::initialize::initialize_db;
+
+    println!("STARTING --- database setup ---");
     // use mulib::app::*;
+    // set up our database
+    let mut conn = DbConnection::default();
+    initialize_db(conn);
+
+    println!("COMPLETE --- database setup--- ");
 
     let conf = get_configuration(None).unwrap();
     let addr = conf.leptos_options.site_addr;

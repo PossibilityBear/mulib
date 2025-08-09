@@ -1,6 +1,7 @@
 
 use leptos::prelude::*;
 use stylance::import_crate_style;
+use crate::components::song_list::song_list::SongList;
 import_crate_style!(main_style, "./src/styles/main.module.scss");
 import_crate_style!(style, "./src/components/home_page/style.module.scss");
 
@@ -18,6 +19,7 @@ pub fn HomePage() -> impl IntoView {
                 class=style::red_centered_button
                 >"Click Me: " {count}</button>
         </div>
+        <SongList list_id=1/>
         
     }
 }
