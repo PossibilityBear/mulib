@@ -6,6 +6,7 @@ pub mod database;
 #[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() {
+    use axum::serve::Serve;
     use axum::Router;
     use leptos::logging::log;
     use leptos::prelude::*;
@@ -16,6 +17,7 @@ async fn main() {
         db_connection::*,
     };
     use crate::database::commands::initialize::initialize_db;
+    use tower_http::services::ServeDir;
 
     println!("STARTING --- database setup ---");
     // use mulib::app::*;
@@ -36,6 +38,7 @@ async fn main() {
             let leptos_options = leptos_options.clone();
             move || shell(leptos_options.clone())
         })
+        .nest_service("/music", ServeDir::new("music"))
         .fallback(leptos_axum::file_and_error_handler(shell))
         .with_state(leptos_options);
 

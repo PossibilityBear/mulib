@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Artist {
     pub id: Option<u32>,
     pub name: String,

@@ -28,16 +28,12 @@ impl Default for SongData {
     }
 }
 
-use crate::models::song::SongDBModel;
 #[server]
-pub async fn get_songs(list_id: u32) -> Result<Vec<SongDBModel>, ServerFnError> {
-    // use crate::database::commands::get_songs::get_songs;
-
-    println!("Get songs called");
+pub async fn get_songs(list_id: u32) -> Result<Vec<Song>, ServerFnError> {
     use crate::database::commands::get_songs::get_songs;
     use crate::database::utils::db_connection::*;
 
-    let mut conn = DbConnection::default(); 
+    let conn = DbConnection::default(); 
     let songs = get_songs(conn);
 
     Ok(songs)
@@ -48,17 +44,22 @@ pub async fn get_songs(list_id: u32) -> Result<Vec<SongDBModel>, ServerFnError> 
 import_crate_style!(main_style, "./src/styles/main.module.scss");
 // a single song
 #[component] 
-pub fn Song(song: SongDBModel) -> impl IntoView {
+pub fn Song(song: Song) -> impl IntoView {
+    let now_playing = use_context::<WriteSignal<Option<Song>>>().expect("to have found now playing song");
+    let song_copy = song.clone();
     view! {
         <p>
             {format!("Title: {}", song.title)}
         </p>
         <p>
-            {format!("Author: {}", song.artist_id.unwrap_or_default())}
+            {format!("Author: {}", song.artist.unwrap_or_default().name)}
         </p>
         <p>
-            {format!("Album: {}", song.album_id.unwrap_or_default())}
+            {format!("Album: {}", song.album.unwrap_or_default().title)}
         </p>
+        <button on:click= move |_|{
+            *now_playing.write() = Some(song_copy.clone());
+        }>{"play"}</button>
     }
 }
 
@@ -70,11 +71,11 @@ pub fn SongList (
 ) -> impl IntoView {
     let song_resource =  OnceResource::new(get_songs(list_id));
 
-    let blank_song = SongDBModel {
+    let blank_song = Song {
         title: "Loading ....".to_string(),
-        album_id: None,
-        artist_id: None,
-        id: 0,
+        album: None,
+        artist: None,
+        id: Some(0),
         file_path: "loading....".to_string(),
 
     };
@@ -89,7 +90,7 @@ pub fn SongList (
                     each=move || { 
                         match song_resource.get() {
                             Some(Ok(s)) => {
-                                let song_opt_vec: Vec<Option<SongDBModel>> = s
+                                let song_opt_vec: Vec<Option<Song>> = s
                                     .into_iter()
                                     .map(|val| Some(val))
                                     .collect();
@@ -101,7 +102,7 @@ pub fn SongList (
                     }
                     key=|song| {match song {
                         Some(s) => s.id,
-                        None => 0 
+                        None => Some(0) 
                     }}
                     children=move |song| {
                         match song {

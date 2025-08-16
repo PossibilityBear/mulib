@@ -2,6 +2,9 @@
 use leptos::prelude::*;
 use stylance::import_crate_style;
 use crate::components::song_list::song_list::SongList;
+use crate::components::controls::controls::Controls;
+use crate::models::song::Song;
+
 import_crate_style!(main_style, "./src/styles/main.module.scss");
 import_crate_style!(style, "./src/components/home_page/style.module.scss");
 
@@ -9,17 +12,14 @@ import_crate_style!(style, "./src/components/home_page/style.module.scss");
 #[component]
 pub fn HomePage() -> impl IntoView {
     // Creates a reactive value to update the button
-    let count = RwSignal::new(0);
-    let on_click = move |_| *count.write() += 1;
+    let (song, set_song) = signal(Option::<Song>::None);
+
+    provide_context(set_song);
     view! {
         <h1 class=main_style::centered>"Hello from mulib!"</h1>
-        <div class=main_style::centered> 
-            <button 
-                on:click=on_click
-                class=style::red_centered_button
-                >"Click Me: " {count}</button>
-        </div>
+
         <SongList list_id=1/>
+        <Controls now_playing=song/>
         
     }
 }
