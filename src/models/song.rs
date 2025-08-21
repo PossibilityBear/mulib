@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
 use crate::models::{album::Album, artist::Artist};
+use leptos_struct_table::*;
+use leptos::prelude::*;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(TableRow, Debug, Clone, Serialize, Deserialize)]
+#[table(impl_vec_data_provider)]
 pub struct Song {
     pub id: Option<u32>,
     pub title: String,

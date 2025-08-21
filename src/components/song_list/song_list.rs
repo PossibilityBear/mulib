@@ -1,5 +1,7 @@
-use std::clone;
+use std::{clone, collections::VecDeque};
 use leptos::prelude::*;
+use leptos_struct_table::*;
+use std::ops::Range;
 use stylance::import_crate_style;
 use serde::{Serialize, Deserialize};
 use crate::models::{
@@ -33,10 +35,41 @@ pub async fn get_songs(list_id: u32) -> Result<Vec<Song>, ServerFnError> {
     use crate::database::commands::get_songs::get_songs;
     use crate::database::utils::db_connection::*;
 
+    println!("hello from get songs");
     let conn = DbConnection::default(); 
     let songs = get_songs(conn);
 
     Ok(songs)
+
+}
+
+#[server]
+pub async fn get_song_count(list_id: u32) -> Result<usize, ServerFnError> {
+    use crate::database::utils::db_connection::*;
+
+    println!("hello from get songs");
+    let conn = DbConnection::default(); 
+
+    let db = conn.db();
+    let mut stmt = db.prepare(
+        "
+        SELECT 
+            Count(*) AS SongCount
+        FROM Song AS s
+        "
+    ).unwrap();
+
+    let song_counts = stmt.query_map([], |row| {
+        let count: usize = row.get(0)?;
+        Ok(count)
+    }).unwrap();
+
+    let count: usize = *song_counts
+        .map(|count| count.expect("to have gotten count"))
+        .collect::<Vec<usize>>()
+        .first().unwrap_or(&0); 
+
+    Ok(count)
 
 }
 
@@ -62,57 +95,104 @@ pub fn Song(song: Song) -> impl IntoView {
         }>{"play"}</button>
     }
 }
+#[derive(Default)]
+pub struct SongListDataProvider {
+    list_id: RwSignal<u32>,
+    sort: VecDeque<(usize, ColumnSort)>,
+}
 
+impl TableDataProvider<Song> for SongListDataProvider {
+    async fn get_rows(
+        &self, range: Range<usize>
+    ) -> Result<(Vec<Song>, Range<usize>), String> {
+        println!("Hellof from data provider");
+
+        // was getting weird errors from 
+        // leptos table in browser console, fix 
+        // was to change range returned to be
+        // based on range.start..range.start + len of vec
+        // then i changed it to range.end to fix duplication
+        // issues where all elements were duped.
+        match get_songs(self.list_id.get_untracked()).await {
+            Ok(songs) => {
+                let len = songs.len();
+                Ok((songs, range.start..range.end))
+            },
+            Err(msg) => Err(format!("{:?}", msg)),
+        }
+        
+    }
+
+    async fn row_count(&self) -> Option<usize> {
+        get_song_count(self.list_id.get_untracked()).await.ok()
+    }
+
+    fn set_sorting(&mut self, sorting: &VecDeque<(usize, ColumnSort)>) {
+        self.sort = sorting.clone();
+    }
+
+    fn track(&self) {
+        self.list_id.track();
+    }
+}
+
+#[derive(TableRow, Debug, Clone, Serialize, Deserialize)]
+#[table(impl_vec_data_provider)]
+pub struct Num {
+    val: i32
+}
+pub struct NumDataProvider {}
+
+impl TableDataProvider<Num> for NumDataProvider {
+    async fn get_rows(
+        &self, range: Range<usize>
+    ) -> Result<(Vec<Num>, Range<usize>), String> {
+        let nums = vec![
+            Num {val: 1},
+            Num {val: 2},
+            Num {val: 3},
+            Num {val: 4},
+
+        ];
+        let nums_len: usize = nums.len();
+        Ok((nums, range.start..nums_len))
+    }
+}
 
 // a list of songs from database
 #[component]
 pub fn SongList (
     list_id: u32
 ) -> impl IntoView {
-    let song_resource =  OnceResource::new(get_songs(list_id));
+    let now_playing = use_context::<WriteSignal<Option<Song>>>().expect("to have found now playing song");
 
-    let blank_song = Song {
-        title: "Loading ....".to_string(),
-        album: None,
-        artist: None,
-        id: Some(0),
-        file_path: "loading....".to_string(),
 
-    };
-
+    let selected_index = RwSignal::new(None);
+    let (selected_row, set_selected_row) = signal(Option::<Signal<Song>>::None);
+    // let (selected_row, set_selected_row) = signal(Option::<Signal<Num>>::None);
 
     view! {
-        <Suspense
-            fallback=move || view!{<p> "Loading..." </p>}
-        >
-            <ul>
-                <For 
-                    each=move || { 
-                        match song_resource.get() {
-                            Some(Ok(s)) => {
-                                let song_opt_vec: Vec<Option<Song>> = s
-                                    .into_iter()
-                                    .map(|val| Some(val))
-                                    .collect();
-                                song_opt_vec
-                            },
-                            Some(Err(e)) => {dbg!(e); vec!{None}},
-                            None => vec!{None},
-                        }
-                    }
-                    key=|song| {match song {
-                        Some(s) => s.id,
-                        None => Some(0) 
+        <div>
+            <p> {move || {
+                match selected_row.get() {
+                    Some(sig) => format!("Selected: {}", sig.get().title),
+                    None => format!("Selected: <None>")
+                }}
+            } </p>
+            <table> 
+                <TableContent 
+                    selection=Selection::Single(selected_index)
+                    on_selection_change={move |evt: SelectionChangeEvent<Song>| {
+                        set_selected_row.write().replace(evt.row);
+                        let song = evt.row.get().clone();
+                        *now_playing.write() = Some(song);
                     }}
-                    children=move |song| {
-                        match song {
-                            Some(s) => 
-                                view!{ <li><Song song=s.clone()/></li>},
-                            None => view!{<li><Song song=blank_song.clone()/></li>},
-                        }
-                    }
-                />
-            </ul>
-        </Suspense>
+                    row_class="select-none"
+                    rows={SongListDataProvider::default()} 
+                    sorting_mode=SortingMode::SingleColumn
+                    scroll_container="html"/>
+            </table>
+        </div>
     }
+
 }
