@@ -160,6 +160,7 @@ impl TableDataProvider<Num> for NumDataProvider {
 }
 
 // a list of songs from database
+import_crate_style!(style, "./src/components/song_list/song_list.module.scss");
 #[component]
 pub fn SongList (
     list_id: u32
@@ -173,13 +174,7 @@ pub fn SongList (
 
     view! {
         <div>
-            <p> {move || {
-                match selected_row.get() {
-                    Some(sig) => format!("Selected: {}", sig.get().title),
-                    None => format!("Selected: <None>")
-                }}
-            } </p>
-            <table> 
+            <table class=style::songs> 
                 <TableContent 
                     selection=Selection::Single(selected_index)
                     on_selection_change={move |evt: SelectionChangeEvent<Song>| {
@@ -192,6 +187,12 @@ pub fn SongList (
                     sorting_mode=SortingMode::SingleColumn
                     scroll_container="html"/>
             </table>
+            <p class=style::now_playing> {move || {
+                match selected_row.get() {
+                    Some(sig) => format!("Now Playing: {}", sig.get().title),
+                    None => format!("Now Playing: <None>")
+                }}
+            } </p>
         </div>
     }
 
