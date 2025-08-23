@@ -1,5 +1,5 @@
 use std::{clone, collections::VecDeque};
-use leptos::prelude::*;
+use leptos::{leptos_dom::logging::console_log, prelude::*};
 use leptos_struct_table::*;
 use std::ops::Range;
 use stylance::import_crate_style;
@@ -116,15 +116,14 @@ impl TableDataProvider<Song> for SongListDataProvider {
         match get_songs(self.list_id.get_untracked()).await {
             Ok(songs) => {
                 let len = songs.len();
-                Ok((songs, range.start..range.end))
+                console_log(&format!("{} songs displaying", len));
+                // console_log(&format!("Range ({}, {})", range.start, range.end));
+                // Ok((songs, range.start..range.start+len))
+                Ok((songs, 0..len))
             },
             Err(msg) => Err(format!("{:?}", msg)),
         }
         
-    }
-
-    async fn row_count(&self) -> Option<usize> {
-        get_song_count(self.list_id.get_untracked()).await.ok()
     }
 
     fn set_sorting(&mut self, sorting: &VecDeque<(usize, ColumnSort)>) {
@@ -133,29 +132,6 @@ impl TableDataProvider<Song> for SongListDataProvider {
 
     fn track(&self) {
         self.list_id.track();
-    }
-}
-
-#[derive(TableRow, Debug, Clone, Serialize, Deserialize)]
-#[table(impl_vec_data_provider)]
-pub struct Num {
-    val: i32
-}
-pub struct NumDataProvider {}
-
-impl TableDataProvider<Num> for NumDataProvider {
-    async fn get_rows(
-        &self, range: Range<usize>
-    ) -> Result<(Vec<Num>, Range<usize>), String> {
-        let nums = vec![
-            Num {val: 1},
-            Num {val: 2},
-            Num {val: 3},
-            Num {val: 4},
-
-        ];
-        let nums_len: usize = nums.len();
-        Ok((nums, range.start..nums_len))
     }
 }
 
@@ -173,9 +149,11 @@ pub fn SongList (
     // let (selected_row, set_selected_row) = signal(Option::<Signal<Num>>::None);
 
     view! {
-        <div>
+        <div class=style::songs>
             <table class=style::songs> 
                 <TableContent 
+                    // display_strategy={DisplayStrategy::Virtualization}
+                    display_strategy={DisplayStrategy::InfiniteScroll}
                     selection=Selection::Single(selected_index)
                     on_selection_change={move |evt: SelectionChangeEvent<Song>| {
                         set_selected_row.write().replace(evt.row);
@@ -185,14 +163,8 @@ pub fn SongList (
                     row_class="select-none"
                     rows={SongListDataProvider::default()} 
                     sorting_mode=SortingMode::SingleColumn
-                    scroll_container="html"/>
+                    scroll_container="div"/>
             </table>
-            <p class=style::now_playing> {move || {
-                match selected_row.get() {
-                    Some(sig) => format!("Now Playing: {}", sig.get().title),
-                    None => format!("Now Playing: <None>")
-                }}
-            } </p>
         </div>
     }
 

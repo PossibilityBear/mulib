@@ -6,12 +6,9 @@ use crate::components::controls::controls::Controls;
 use crate::models::song::Song;
 
 import_crate_style!(main_style, "./src/styles/main.module.scss");
-import_crate_style!(style, "./src/components/home_page/home_page.module.scss");
-
-/// Renders the home page of your application.
+import_crate_style!(home_page, "./src/components/home_page/home_page.module.scss");
 #[component]
 pub fn HomePage() -> impl IntoView {
-    // Creates a reactive value to update the button
     let (song, set_song) = signal(Option::<Song>::None);
 
     provide_context(set_song);

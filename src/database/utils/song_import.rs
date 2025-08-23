@@ -21,12 +21,16 @@ pub fn read_music(path: PathBuf) -> io::Result<Vec<Song>>{
         let e = entry?;
         if !e.path().is_dir() {
             let file = File::open(e.path())?;
-            let tag = Tag::read_from2(file).unwrap();
+            let Ok(tag) = Tag::read_from2(file) else {
+                continue;
+            };
+
 
             let mut album: Option<Album> = None;
             let mut contributing_artist: Option<Artist> = None;
             let mut album_artist: Option<Artist> = None;
-            let mut title: String = e.file_name().into_string().unwrap();
+            // TODO: unwrap my shiddy unwraps      
+            let mut title: String = e.file_name().into_string().expect("file name to be String compatible");
 
             for frame in tag.frames() {
                 let id = frame.id();
@@ -69,7 +73,7 @@ pub fn read_music(path: PathBuf) -> io::Result<Vec<Song>>{
                         data,
                     }) => {
                         let size = data.len();
-                        println!("{id}:{picture_type}=<image, {mime_type}, description {description:?}, {size} bytes>");
+                        // println!("{id}:{picture_type}=<image, {mime_type}, description {description:?}, {size} bytes>");
                     }
                     Content::UniqueFileIdentifier(UniqueFileIdentifier {
                         owner_identifier,
@@ -83,7 +87,7 @@ pub fn read_music(path: PathBuf) -> io::Result<Vec<Song>>{
                                     .unwrap_or_else(|| format!("\\x{:02X}", byte))
                             })
                             .collect::<String>();
-                        println!("{id}:{owner_identifier}=b\"{value}\"");
+                        // println!("{id}:{owner_identifier}=b\"{value}\"");
                     }
                     _ => {}
                 }
@@ -96,12 +100,12 @@ pub fn read_music(path: PathBuf) -> io::Result<Vec<Song>>{
                 Song {
                     id: None,
                     title: title,
-                    file_path: e.path().as_mut_os_string().clone().into_string().unwrap(),
+                    file_path: e.path().as_mut_os_string().clone().into_string().expect("file path to be String compatible"),
                     artist: contributing_artist,
                     album: album
             })
         } else {
-            songs.append(&mut read_music(e.path()).unwrap());
+            songs.append(&mut read_music(e.path()).expect("to have read music from disk"));
         }
     };
     Ok(songs)
