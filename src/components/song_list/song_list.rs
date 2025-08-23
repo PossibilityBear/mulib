@@ -74,27 +74,32 @@ pub async fn get_song_count(list_id: u32) -> Result<usize, ServerFnError> {
 }
 
 
-import_crate_style!(main_style, "./src/styles/main.module.scss");
-// a single song
-#[component] 
-pub fn Song(song: Song) -> impl IntoView {
-    let now_playing = use_context::<WriteSignal<Option<Song>>>().expect("to have found now playing song");
-    let song_copy = song.clone();
-    view! {
-        <p>
-            {format!("Title: {}", song.title)}
-        </p>
-        <p>
-            {format!("Author: {}", song.artist.unwrap_or_default().name)}
-        </p>
-        <p>
-            {format!("Album: {}", song.album.unwrap_or_default().title)}
-        </p>
-        <button on:click= move |_|{
-            *now_playing.write() = Some(song_copy.clone());
-        }>{"play"}</button>
-    }
-}
+// import_crate_style!(main_style, "./src/styles/main.module.scss");
+// // a single song
+// #[component] 
+// pub fn Song(song: Song) -> impl IntoView {
+//     let song_clone = song.clone();
+//     view! {
+//         <p>
+//             {format!("Title: {}", song.title)}
+//         </p>
+//         <p>
+//             {format!("Author: {}", song.artist.unwrap_or_default().name)}
+//         </p>
+//         <p>
+//             {format!("Album: {}", song.album.unwrap_or_default().title)}
+//         </p>
+//         <button on:click= move |_| {
+//             if let Some(playing) = now_playing {
+//                 playing.update(|songs| {
+//                     songs.push(song_clone.clone());
+//                 });
+//             }
+//         }>{"play"}</button>
+//     }
+// }
+
+
 #[derive(Default)]
 pub struct SongListDataProvider {
     list_id: RwSignal<u32>,
@@ -141,7 +146,7 @@ import_crate_style!(style, "./src/components/song_list/song_list.module.scss");
 pub fn SongList (
     list_id: u32
 ) -> impl IntoView {
-    let now_playing = use_context::<WriteSignal<Option<Song>>>().expect("to have found now playing song");
+    let now_playing = use_context::<WriteSignal<VecDeque<Song>>>().expect("to have found now playing song");
 
 
     let selected_index = RwSignal::new(None);
@@ -158,7 +163,9 @@ pub fn SongList (
                     on_selection_change={move |evt: SelectionChangeEvent<Song>| {
                         set_selected_row.write().replace(evt.row);
                         let song = evt.row.get().clone();
-                        *now_playing.write() = Some(song);
+                        now_playing.update(|songs| {
+                            songs.push_back(song);
+                        });
                     }}
                     row_class="select-none"
                     rows={SongListDataProvider::default()} 
