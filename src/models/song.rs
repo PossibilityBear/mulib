@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use crate::models::{album::Album, artist::Artist};
+use leptos::prelude::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Song {
@@ -9,6 +10,7 @@ pub struct Song {
     pub artist: Option<Artist>,
     pub album: Option<Album>, 
 }
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SongDBModel {
     pub id: u32,

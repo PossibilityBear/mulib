@@ -1,4 +1,5 @@
 use crate::models::artist::Artist;
+use leptos::prelude::*;
 
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]

@@ -1,5 +1,6 @@
-use std::clone;
-use leptos::prelude::*;
+use std::{clone, collections::VecDeque};
+use leptos::{leptos_dom::logging::console_log, prelude::*};
+use std::ops::Range;
 use stylance::import_crate_style;
 use serde::{Serialize, Deserialize};
 use crate::models::{
@@ -33,6 +34,7 @@ pub async fn get_songs(list_id: u32) -> Result<Vec<Song>, ServerFnError> {
     use crate::database::commands::get_songs::get_songs;
     use crate::database::utils::db_connection::*;
 
+    println!("hello from get songs");
     let conn = DbConnection::default(); 
     let songs = get_songs(conn);
 
@@ -40,79 +42,135 @@ pub async fn get_songs(list_id: u32) -> Result<Vec<Song>, ServerFnError> {
 
 }
 
+#[server]
+pub async fn get_song_count(list_id: u32) -> Result<usize, ServerFnError> {
+    use crate::database::utils::db_connection::*;
+
+    println!("hello from get songs");
+    let conn = DbConnection::default(); 
+
+    let db = conn.db();
+    let mut stmt = db.prepare(
+        "
+        SELECT 
+            Count(*) AS SongCount
+        FROM Song AS s
+        "
+    ).unwrap();
+
+    let song_counts = stmt.query_map([], |row| {
+        let count: usize = row.get(0)?;
+        Ok(count)
+    }).unwrap();
+
+    let count: usize = *song_counts
+        .map(|count| count.expect("to have gotten count"))
+        .collect::<Vec<usize>>()
+        .first().unwrap_or(&0); 
+
+    Ok(count)
+
+}
+
 
 import_crate_style!(main_style, "./src/styles/main.module.scss");
 // a single song
 #[component] 
-pub fn Song(song: Song) -> impl IntoView {
-    let now_playing = use_context::<WriteSignal<Option<Song>>>().expect("to have found now playing song");
-    let song_copy = song.clone();
+pub fn Song(song: Option<Song>) -> impl IntoView {
+    let song_queue = use_context::<WriteSignal<VecDeque<Song>>>().expect("to have found now playing song");
+    let (song, _) = signal(song);
     view! {
-        <p>
-            {format!("Title: {}", song.title)}
-        </p>
-        <p>
-            {format!("Author: {}", song.artist.unwrap_or_default().name)}
-        </p>
-        <p>
-            {format!("Album: {}", song.album.unwrap_or_default().title)}
-        </p>
-        <button on:click= move |_|{
-            *now_playing.write() = Some(song_copy.clone());
-        }>{"play"}</button>
+        <Show
+            when=move || {song.get().is_some()}
+            fallback=|| view!{<td>{"loading..."}</td>}
+            >
+            <td>
+                {format!("{}", song.get().expect("some song").title)}
+            </td>
+            <td>
+                {format!("{}", song.get().expect("some song").artist.unwrap_or_default().name)}
+            </td>
+            <td>
+                {format!("{}", song.get().expect("some song").album.unwrap_or_default().title)}
+            </td>
+            <td>
+            <button on:click= move |_| {
+                console_log(&format!("Clicked play on {}", song.get().expect("some song").title));
+                song_queue.update(|songs| {
+                    songs.push_back(song.get().expect("some song").clone());
+                });
+            }>{"play"}</button>
+            </td>
+        </Show>
     }
 }
-
-
 // a list of songs from database
+import_crate_style!(style, "./src/components/song_list/song_list.module.scss");
 #[component]
 pub fn SongList (
     list_id: u32
 ) -> impl IntoView {
-    let song_resource =  OnceResource::new(get_songs(list_id));
+    let (list_id, set_list_id) = signal(list_id);
 
-    let blank_song = Song {
-        title: "Loading ....".to_string(),
-        album: None,
-        artist: None,
-        id: Some(0),
-        file_path: "loading....".to_string(),
-
-    };
+    let songs_res = Resource::new(
+        move || {
+            list_id.get()
+        },
+        |id| {get_songs(id)}
+    );
 
 
     view! {
-        <Suspense
-            fallback=move || view!{<p> "Loading..." </p>}
-        >
-            <ul>
-                <For 
-                    each=move || { 
-                        match song_resource.get() {
-                            Some(Ok(s)) => {
-                                let song_opt_vec: Vec<Option<Song>> = s
-                                    .into_iter()
-                                    .map(|val| Some(val))
-                                    .collect();
-                                song_opt_vec
-                            },
-                            Some(Err(e)) => {dbg!(e); vec!{None}},
-                            None => vec!{None},
+        <div class=style::songs>
+            <Suspense
+                fallback=move || view!{ <p> {"Song Loading..."} </p>}
+                >
+            <table class=style::songs>
+                <thead>
+                    <tr>
+                        <th>{"Title"}</th>
+                        <th>{"Author"}</th>
+                        <th>{"Album"}</th>
+                        <th>{""}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <For 
+                        each=move || {
+                            if let Some(Ok(songs)) = songs_res.get() {
+                                songs.clone().iter()
+                                    .map(|song| {
+                                        Some(song.clone())
+                                    })
+                                    .collect::<Vec<Option<Song>>>()
+                            } else {
+                                Vec::<Option<Song>>::new()
+                            }
                         }
-                    }
-                    key=|song| {match song {
-                        Some(s) => s.id,
-                        None => Some(0) 
-                    }}
-                    children=move |song| {
-                        match song {
-                            Some(s) => 
-                                view!{ <li><Song song=s.clone()/></li>},
-                            None => view!{<li><Song song=blank_song.clone()/></li>},
+                        key=|song| {
+                            if let Some(s) = song {
+                                if let Some(id) = s.id {
+                                    id
+                                } else {
+                                    0
+                                }
+                            } else {
+                                0
+                            }
                         }
-                    }
-                />
-            </ul>
-        </Suspense>
+                        children= move |song| {
+                            view!{
+                                <tr>
+                                    <Song song=song/>
+                                </tr>
+                            }
+                        }
+
+                    />
+                </tbody>
+            </table>
+            </Suspense>
+        </div>
     }
+
 }

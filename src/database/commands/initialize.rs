@@ -23,7 +23,7 @@ pub fn initialize_db(conn: DbConnection) -> Result<()> {
     
     // let mut db = conn.db();
     let songs = read_music("./music".into()).unwrap();
-    
+    println!("Read {} Songs From Library", songs.len());
     let artists = init_artists(&songs, conn.clone())?;
     println!("Init'd Artists");
     let albums = init_albums(&songs, &artists, conn.clone())?;
@@ -110,6 +110,8 @@ fn init_albums(songs: &Vec<Song>, artists: &HashMap<String, u32>, conn: DbConnec
             let mut albums = Vec::<Album>::new();            
             for song in songs {
                 if let Some(album) = &song.album {
+                    // check for existing album with this name
+                    // skip duplicates
                     let mut exists: bool = false;
                     for a in &albums {
                         if a.title == album.title {
@@ -127,7 +129,12 @@ fn init_albums(songs: &Vec<Song>, artists: &HashMap<String, u32>, conn: DbConnec
             ")?;
             
             for album in &albums {
-                let artist_id = artists.get(&album.artist.clone().unwrap().name).unwrap();
+                let artist_id = 
+                if let Some(artist) = &album.artist{
+                    artists.get(&artist.name)
+                } else {
+                    None
+                };
                 let _ = stmt.execute((album.title.clone(), artist_id))?;
             }
         }
