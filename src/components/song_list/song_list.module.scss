@@ -20,7 +20,7 @@ table.songs {
 
 table.songs tr {
   // height: 10px;
-  line-height: 10px;
+  // line-height: 10px;
   border-top: 1px solid lightgray;
   border-bottom: 1px solid lightgray;
 }
@@ -32,7 +32,7 @@ table.songs thead tr:nth-child(1) th{
   top: -1px;
   z-index: 10;
   border: none;
-  line-height: 20px;
+  // line-height: 20px;
   background: hsl(0, 0%, 90%);
   text-align: left;
 }
@@ -46,11 +46,11 @@ table.songs caption {
   padding:.5em;
 }
 
-table.songs th,
+// table.songs th,
 table.songs td {
   padding-left: .5em;
   padding-right: .5em;
-  height: 10px;
+  // height: 10px;
 }
 
 :global(tr.selected) {

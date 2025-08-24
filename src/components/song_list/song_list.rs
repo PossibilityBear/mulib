@@ -1,6 +1,5 @@
 use std::{clone, collections::VecDeque};
 use leptos::{leptos_dom::logging::console_log, prelude::*};
-use leptos_struct_table::*;
 use std::ops::Range;
 use stylance::import_crate_style;
 use serde::{Serialize, Deserialize};
@@ -74,104 +73,103 @@ pub async fn get_song_count(list_id: u32) -> Result<usize, ServerFnError> {
 }
 
 
-// import_crate_style!(main_style, "./src/styles/main.module.scss");
-// // a single song
-// #[component] 
-// pub fn Song(song: Song) -> impl IntoView {
-//     let song_clone = song.clone();
-//     view! {
-//         <p>
-//             {format!("Title: {}", song.title)}
-//         </p>
-//         <p>
-//             {format!("Author: {}", song.artist.unwrap_or_default().name)}
-//         </p>
-//         <p>
-//             {format!("Album: {}", song.album.unwrap_or_default().title)}
-//         </p>
-//         <button on:click= move |_| {
-//             if let Some(playing) = now_playing {
-//                 playing.update(|songs| {
-//                     songs.push(song_clone.clone());
-//                 });
-//             }
-//         }>{"play"}</button>
-//     }
-// }
-
-
-#[derive(Default)]
-pub struct SongListDataProvider {
-    list_id: RwSignal<u32>,
-    sort: VecDeque<(usize, ColumnSort)>,
-}
-
-impl TableDataProvider<Song> for SongListDataProvider {
-    async fn get_rows(
-        &self, range: Range<usize>
-    ) -> Result<(Vec<Song>, Range<usize>), String> {
-        println!("Hellof from data provider");
-
-        // was getting weird errors from 
-        // leptos table in browser console, fix 
-        // was to change range returned to be
-        // based on range.start..range.start + len of vec
-        // then i changed it to range.end to fix duplication
-        // issues where all elements were duped.
-        match get_songs(self.list_id.get_untracked()).await {
-            Ok(songs) => {
-                let len = songs.len();
-                console_log(&format!("{} songs displaying", len));
-                // console_log(&format!("Range ({}, {})", range.start, range.end));
-                // Ok((songs, range.start..range.start+len))
-                Ok((songs, 0..len))
-            },
-            Err(msg) => Err(format!("{:?}", msg)),
-        }
-        
-    }
-
-    fn set_sorting(&mut self, sorting: &VecDeque<(usize, ColumnSort)>) {
-        self.sort = sorting.clone();
-    }
-
-    fn track(&self) {
-        self.list_id.track();
+import_crate_style!(main_style, "./src/styles/main.module.scss");
+// a single song
+#[component] 
+pub fn Song(song: Option<Song>) -> impl IntoView {
+    let song_queue = use_context::<WriteSignal<VecDeque<Song>>>().expect("to have found now playing song");
+    let (song, _) = signal(song);
+    view! {
+        <Show
+            when=move || {song.get().is_some()}
+            fallback=|| view!{<td>{"loading..."}</td>}
+            >
+            <td>
+                {format!("{}", song.get().expect("some song").title)}
+            </td>
+            <td>
+                {format!("{}", song.get().expect("some song").artist.unwrap_or_default().name)}
+            </td>
+            <td>
+                {format!("{}", song.get().expect("some song").album.unwrap_or_default().title)}
+            </td>
+            <td>
+            <button on:click= move |_| {
+                console_log(&format!("Clicked play on {}", song.get().expect("some song").title));
+                song_queue.update(|songs| {
+                    songs.push_back(song.get().expect("some song").clone());
+                });
+            }>{"play"}</button>
+            </td>
+        </Show>
     }
 }
-
 // a list of songs from database
 import_crate_style!(style, "./src/components/song_list/song_list.module.scss");
 #[component]
 pub fn SongList (
     list_id: u32
 ) -> impl IntoView {
-    let now_playing = use_context::<WriteSignal<VecDeque<Song>>>().expect("to have found now playing song");
+    let (list_id, set_list_id) = signal(list_id);
 
+    let songs_res = Resource::new(
+        move || {
+            list_id.get()
+        },
+        |id| {get_songs(id)}
+    );
 
-    let selected_index = RwSignal::new(None);
-    let (selected_row, set_selected_row) = signal(Option::<Signal<Song>>::None);
-    // let (selected_row, set_selected_row) = signal(Option::<Signal<Num>>::None);
 
     view! {
         <div class=style::songs>
-            <table class=style::songs> 
-                <TableContent 
-                    // display_strategy={DisplayStrategy::Virtualization}
-                    display_strategy={DisplayStrategy::InfiniteScroll}
-                    selection=Selection::Single(selected_index)
-                    on_selection_change={move |evt: SelectionChangeEvent<Song>| {
-                        set_selected_row.write().replace(evt.row);
-                        let song = evt.row.get().clone();
-                        now_playing.update(|songs| {
-                            songs.push_back(song);
-                        });
-                    }}
-                    row_class="select-none"
-                    rows={SongListDataProvider::default()} 
-                    sorting_mode=SortingMode::SingleColumn
-                    scroll_container="div"/>
+            <Suspense
+                fallback=move || view!{ <p> {"Song Loading..."} </p>}
+                >
+            <table class=style::songs>
+                <thead>
+                    <tr>
+                        <th>{"Title"}</th>
+                        <th>{"Author"}</th>
+                        <th>{"Album"}</th>
+                        <th>{""}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <For 
+                        each=move || {
+                            if let Some(Ok(songs)) = songs_res.get() {
+                                songs.clone().iter()
+                                    .map(|song| {
+                                        Some(song.clone())
+                                    })
+                                    .collect::<Vec<Option<Song>>>()
+                            } else {
+                                Vec::<Option<Song>>::new()
+                            }
+                        }
+                        key=|song| {
+                            if let Some(s) = song {
+                                if let Some(id) = s.id {
+                                    id
+                                } else {
+                                    0
+                                }
+                            } else {
+                                0
+                            }
+                        }
+                        children= move |song| {
+                            view!{
+                                <tr>
+                                    <Song song=song/>
+                                </tr>
+                            }
+                        }
+
+                    />
+                </tbody>
             </table>
+            </Suspense>
         </div>
     }
 
