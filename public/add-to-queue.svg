@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" xmlns:bx="https://boxy-svg.com">
+  <defs>
+    <bx:export>
+      <bx:file format="svg" path="add-to-queue.svg" normalization="{&quot;removeBoxySVGMetadata&quot;:true,&quot;removeForeignMetadata&quot;:true}"/>
+    </bx:export>
+  </defs>
+  <rect x="14.107" y="381.317" width="471.762" height="92.284" style="stroke: rgb(0, 0, 0); stroke-width: 1px;"/>
+  <g style="" transform="matrix(2.044942, 0, 0, 2.301, -668.124756, -204.794739)">
+    <path d="M 388.657 93.853 L 388.657 115.298 L 412.787 115.298 L 412.787 140.441 L 388.657 140.441 L 388.657 161.886 L 360.366 161.886 L 360.366 140.441 L 336.235 140.441 L 336.235 115.298 L 360.366 115.298 L 360.366 93.853 L 388.657 93.853 Z" style="stroke: rgb(0, 0, 0); stroke-width: 1px;"/>
+  </g>
+  <rect x="14.113" y="212.304" width="471.762" height="92.284" style="stroke: rgb(0, 0, 0); stroke-width: 1px;"/>
+  <rect x="202.007" y="43.291" width="283.862" height="92.284" style="stroke: rgb(0, 0, 0); stroke-width: 1px;"/>
+</svg>

@@ -3,11 +3,11 @@ use leptos::{leptos_dom::logging::console_log, prelude::*};
 use std::ops::Range;
 use stylance::import_crate_style;
 use serde::{Serialize, Deserialize};
-use crate::models::{
+use crate::{components::controls::controls::{PlaybackState, SongQueue, SongQueueContext}, models::{
         album::{Album, AlbumDBModel}, 
         artist::{Artist, ArtistDBModel}, 
         song::Song
-    };
+    }};
     
 
 
@@ -73,11 +73,12 @@ pub async fn get_song_count(list_id: u32) -> Result<usize, ServerFnError> {
 }
 
 
+import_crate_style!(style, "./src/components/song_list/song_list.module.scss");
 import_crate_style!(main_style, "./src/styles/main.module.scss");
 // a single song
 #[component] 
 pub fn Song(song: Option<Song>) -> impl IntoView {
-    let song_queue = use_context::<WriteSignal<VecDeque<Song>>>().expect("to have found now playing song");
+    let queue: SongQueue = use_context::<SongQueueContext>().expect("to have found now song queue").into();
     let (song, _) = signal(song);
     view! {
         <Show
@@ -93,19 +94,31 @@ pub fn Song(song: Option<Song>) -> impl IntoView {
             <td>
                 {format!("{}", song.get().expect("some song").album.unwrap_or_default().title)}
             </td>
-            <td>
-            <button on:click= move |_| {
-                console_log(&format!("Clicked play on {}", song.get().expect("some song").title));
-                song_queue.update(|songs| {
-                    songs.push_back(song.get().expect("some song").clone());
-                });
-            }>{"play"}</button>
+            <td class=style::button_col>
+                <input 
+                    type="image"
+                    src="/public/play-button.svg"
+                    class=style::song_play_button
+                    on:click= move |_| {
+                        console_log(&format!("Clicked play on {}", song.get().expect("some song").title));
+                        _ = queue.pop_front();
+                        queue.push_front(song.get().expect("to find song"));
+                        queue.set_playback_state(PlaybackState::Play);
+                }/>
+            </td>
+            <td class=style::button_col>
+                <input 
+                    type="image"
+                    src="/public/add-to-queue.svg"
+                    class=style::song_play_button
+                    on:click= move |_| {
+                        queue.push_back(song.get().expect("to find song"));
+                }/>
             </td>
         </Show>
     }
 }
 // a list of songs from database
-import_crate_style!(style, "./src/components/song_list/song_list.module.scss");
 #[component]
 pub fn SongList (
     list_id: u32
@@ -131,7 +144,8 @@ pub fn SongList (
                         <th>{"Title"}</th>
                         <th>{"Author"}</th>
                         <th>{"Album"}</th>
-                        <th>{""}</th>
+                        <th class=style::button_col>{""}</th>//play button
+                        <th class=style::button_col>{""}</th>//add to queue button
                     </tr>
                 </thead>
                 <tbody>

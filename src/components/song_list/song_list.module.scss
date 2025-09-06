@@ -56,6 +56,20 @@ table.songs td {
 :global(tr.selected) {
   color: red;
 }
+
+
+input.song_play_button {
+  padding: 10px;
+  max-height: 1rlh;
+  max-width: 1rlh;
+}
+
+
+th.button_col ,
+td.button_col
+{
+  width: 3rlh;
+}
 // /* Zebra Table Style */
 // [data-table-theme*=zebra] tbody tr:nth-of-type(odd) {
 //   background: rgba(0,0,0,.05);

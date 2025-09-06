@@ -39,6 +39,7 @@ async fn main() {
             move || shell(leptos_options.clone())
         })
         .nest_service("/music", ServeDir::new("music"))
+        .nest_service("/public", ServeDir::new("public"))
         .fallback(leptos_axum::file_and_error_handler(shell))
         .with_state(leptos_options);
 
