@@ -24,6 +24,10 @@ pub fn get_songs(conn: DbConnection) -> Vec<Song> {
         LEFT JOIN Album AS alb ON alb.Id = s.albumId
         LEFT JOIN Artist AS art ON art.Id = s.artistId
         LEFT JOIN Artist AS AlbArt ON alb.artistId = AlbArt.Id
+        ORDER BY 
+            art.name COLLATE NOCASE ASC, 
+            alb.title COLLATE NOCASE ASC, 
+            s.title COLLATE NOCASE ASC 
         "
     ).unwrap();
 
