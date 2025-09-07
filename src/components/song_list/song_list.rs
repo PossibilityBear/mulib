@@ -97,7 +97,7 @@ pub fn Song(song: Option<Song>) -> impl IntoView {
             <td class=style::button_col>
                 <input 
                     type="image"
-                    src="/public/play-button.svg"
+                    src="/public/play.svg"
                     class=style::song_play_button
                     on:click= move |_| {
                         console_log(&format!("Clicked play on {}", song.get().expect("some song").title));

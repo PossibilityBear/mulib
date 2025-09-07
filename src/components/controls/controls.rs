@@ -1,4 +1,4 @@
-use std::{clone, collections::VecDeque, default};
+use std::{clone, collections::VecDeque, default, time::Duration};
 use leptos::{ev, html::{self, p}, leptos_dom::logging::console_log, prelude::*, tachys::html::style};
 use leptos_use::{use_event_listener, use_window};
 use stylance::import_crate_style;
@@ -104,7 +104,11 @@ impl SongQueue {
     }
 }
 
-
+#[derive (Default, Clone, Copy)]
+struct SongProgress {
+    duration: f64 ,
+    current: f64 ,
+}
 
 #[component]
 pub fn Controls(
@@ -112,12 +116,15 @@ pub fn Controls(
 ) -> impl IntoView {
 
     let audio_ref = NodeRef::<html::Audio>::new();
+    let song_progress_ref = NodeRef::<html::Input>::new();
+    let volume_ref = NodeRef::<html::Input>::new();
 
     _ = use_event_listener(audio_ref, ev::ended, move |_| {
         console_log("Audio track has finished playing!");
         queue.pop_front();
     });
 
+    let (song_progress, set_song_progress) = signal(SongProgress::default());
 
     Effect::new(move |_| {
         match queue.get_playback_state() {
@@ -149,49 +156,49 @@ pub fn Controls(
 
                 queue.set_playback_state(PlaybackState::Play);
 
-                if let Some(audio_el) = audio_ref.get() {
-                    // technically autoplay is controlling
-                    // this but doesn't seem to hurt
-                    _ = audio_el.play();
-                }
+                // if let Some(audio_el) = audio_ref.get() {
+                //     // technically autoplay is controlling
+                //     // this but doesn't seem to hurt
+                //     _ = audio_el.play();
+                // }
 
             },
             PlaybackState::SkipBackward => todo!(),
         }
     });
+    let on_time_update = move |_| {
+        set_song_progress.update(|sp| {
+            if let Some(audio_el) = audio_ref.get() {
+                sp.duration = audio_el.duration();
+                sp.current = audio_el.current_time();
+            } else {
+                sp.current = 0.0;
+            }
+        })
+    };
+
+    
+
 
     view!{
         <div>
-            <p class=controls::now_playing> {move || {
-                    format!("Play state = {:?} ", queue.get_playback_state())
-                }}
-            </p>
-            <p class=controls::now_playing> {move || {
-                match queue.peek_front() {
-                    Some(song) => format!("Now Playing: {}", song.title),
-                    None => format!("Now Playing: <None>")
-                }}
-            }
-            </p>
-            <ol>
-                <For
-                    each=move || queue.get_songs()
-                    key=|song| song.id 
-                    children=move |song| {
-                        view!{
-                            <p 
-                            on:click=move |_| {
-                                queue.remove_songs(song.id.expect("song to have ID"));
-                            }
-                            >{song.title}</p>
+            <For
+                each=move || queue.get_songs()
+                key=|song| song.id 
+                children=move |song| {
+                    view!{
+                        <p class=controls::now_playing
+                        on:click=move |_| {
+                            queue.remove_songs(song.id.expect("song to have ID"));
                         }
+                        >{song.title}</p>
                     }
-                />
-            </ol>
+                }
+            />
             <audio 
             node_ref=audio_ref 
             class=main_style::centered
-            controls 
+            on:timeupdate=on_time_update
             autoplay=move || {queue.get_playback_state() == PlaybackState::Play} 
             src = move || {
                 match queue.peek_front() {
@@ -200,27 +207,89 @@ pub fn Controls(
                 }
             }>
             </audio>
-            <button
-                on:click=move |_| {
-                    queue.set_playback_state(PlaybackState::Play);
-                }
-            > 
-                "play" 
-            </button>
-            <button
-                on:click=move |_| {
-                    queue.set_playback_state(PlaybackState::Pause);
-                }
-            > 
-                "pause" 
-            </button>
-            <button
-                on:click=move |_| {
-                    queue.set_playback_state(PlaybackState::SkipForward);
-                }
-            > 
-                "skip" 
-            </button>
+            <div class=controls::input_group>
+                <input
+                    type="image"
+                    src=move || {
+                        if queue.get_playback_state() == PlaybackState::Pause {
+                            "/public/play.svg"
+                        } else {
+                            "/public/pause.svg"
+                        }
+                    }
+                    class=controls::button
+                    on:click=move |_| {
+                        if queue.get_playback_state() == PlaybackState::Pause {
+                            queue.set_playback_state(PlaybackState::Play);
+                        } else {
+                            queue.set_playback_state(PlaybackState::Pause);
+                        }
+                    }
+                /> 
+                <input
+                    type="image"
+                    src="/public/seek-forward.svg"
+                    class=controls::button
+                    on:click=move |_| {
+                        queue.set_playback_state(PlaybackState::SkipForward);
+                    }
+                /> 
+                <div class=controls::input_group>
+                    <image class=controls::button src="/public/volume-icon.svg"/>
+                    <input type="range" 
+                        node_ref=volume_ref
+                        min="0.0" 
+                        max="1.0"
+                        step="0.01"
+                        prop:value="1.0"
+                        on:change=move |_| {
+                            if let (Some(range), Some(audio)) = (volume_ref.get(), audio_ref.get()) {
+                                console_log(&range.value());
+                                audio.set_volume(range.value().parse::<f64>().expect("to convert range value to float"));
+                            }
+                        }
+                    />
+                </div>
+            </div>
+            <div class=controls::input_group>
+                <input type="range" 
+                    min="0" 
+                    node_ref=song_progress_ref
+                    max=move || {song_progress.get().duration} 
+                    prop:value=move || {
+                        if queue.peek_front().is_none() {
+                            0.0
+                        } else {
+                            song_progress.get().current
+                        }
+                    }
+                    on:change=move |event| {
+                        if let (Some(range), Some(audio)) = (song_progress_ref.get(), audio_ref.get()) {
+                            audio.set_current_time(range.value().parse::<f64>().expect("to convert range value to float"));
+                        }
+                        // todo!()
+                    }
+                />
+                <p class=controls::time_stamp> {move || {
+                    if queue.peek_front().is_some() && queue.get_playback_state() == PlaybackState::Play {
+                        let mut duration = song_progress.get().duration;
+                        if duration.is_nan() {
+                            duration = 0.0;
+                        }
+                        let current = song_progress.get().current;
+
+                        let current_minutes = (current / 60.0).floor();
+                        let current_seconds = current % 60.0;
+
+                        let duration_minutes = (duration / 60.0).floor();
+                        let duration_seconds = duration % 60.0;
+
+                        format!("{current_minutes:01.0}:{current_seconds:02.0} / {duration_minutes:01.0}:{duration_seconds:02.0}")
+                    } else {
+                        format!("0:00 / 0:00")
+                    }
+                }}</p>
+            </div>
         </div>
     }
 }
