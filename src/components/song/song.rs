@@ -82,13 +82,13 @@ pub fn Song(song: Option<Song>, actions: Vec<SongAction>) -> impl IntoView {
                             })
                         } else {
                             None
-                        {if is_remove_from_queue{
-                            Some(view! {
-                                <input class=song::button type="image" src="/public/add-to-queue.svg" on:click=add_to_queue/>
-                            })
-                        } else {
-                            None
-                        }}
+                        // {if is_remove_from_queue{
+                        //     Some(view! {
+                        //         <input class=song::button type="image" src="/public/add-to-queue.svg" on:click=add_to_queue/>
+                        //     })
+                        // } else {
+                        //     None
+                        // }}
                         }}
                     </div>
                 </div>
