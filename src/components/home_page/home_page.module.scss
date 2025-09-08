@@ -1,24 +1,45 @@
-h1.title {
-	height: 5%;
-	margin:auto;
-	text-align: center;
-	display: block;
-}
 div.container {
+	display: flex;
+	flex-direction: column;
 	height: 100dvh;
 }
 
 div.main_view {
 	display: flex;
-	width: 100dvw;
-	height: 80%; 
+	justify-content: space-around;
+	gap: 1dvw;
+	width: 95%;
+	margin: auto;
+	height: 90%; 
 }
 
 div.controls {
 	display: flex;
 	justify-content: center;
-	padding-top: 2%;
-	height: 13%;
-	width: 100dvw;
+	align-items: center;
+	min-height: 0;
+	max-height: 10%;
+	padding: 20px;
 	background-color: lightgray;
+}
+
+.queue {
+	box-sizing: border-box;
+	border-radius: 1dvh;
+	border: solid lightgray 5px;
+	flex-shrink: 1;
+	flex-basis: 45%;
+	height: 100%;
+	min-width: 0;
+}
+
+.song_list {
+	box-sizing: border-box;
+	border-radius: 1dvh;
+	border: solid lightgray 5px;
+	align-self: flex-start;
+	flex-shrink: 3;
+	flex-basis: 70%;
+	height: 100%;
+	min-width: 0;
 }

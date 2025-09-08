@@ -1,12 +1,6 @@
 div.songs {
-  margin: auto;
   max-height: 100%;
   width: 100%;
-  max-width: 90vw;
   overflow-y: auto;  /* Enable vertical scrolling when content exceeds max-height */
 }
 
-
-div.list_container {
-  margin: .25vh;
-}

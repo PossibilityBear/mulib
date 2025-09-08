@@ -58,38 +58,36 @@ pub fn SongList (
             <Suspense
                 fallback=move || view!{ <p> {"Song Loading..."} </p>}
                 >
-                <div class=style::list_container>
-                    <For 
-                        each=move || {
-                            if let Some(Ok(songs)) = songs_res.get() {
-                                songs.clone().iter()
-                                    .map(|song| {
-                                        Some(song.clone())
-                                    })
-                                    .collect::<Vec<Option<Song>>>()
-                            } else {
-                                Vec::<Option<Song>>::new()
-                            }
+                <For 
+                    each=move || {
+                        if let Some(Ok(songs)) = songs_res.get() {
+                            songs.clone().iter()
+                                .map(|song| {
+                                    Some(song.clone())
+                                })
+                                .collect::<Vec<Option<Song>>>()
+                        } else {
+                            Vec::<Option<Song>>::new()
                         }
-                        key=|song| {
-                            if let Some(s) = song {
-                                if let Some(id) = s.id {
-                                    id
-                                } else {
-                                    0
-                                }   
+                    }
+                    key=|song| {
+                        if let Some(s) = song {
+                            if let Some(id) = s.id {
+                                id
                             } else {
                                 0
-                            }
+                            }   
+                        } else {
+                            0
                         }
-                        children= move |song| {
-                            view!{
-                                <Song song=song actions={vec![SongAction::PlayNow, SongAction::AddToQueue]}/>
-                            }
+                    }
+                    children= move |song| {
+                        view!{
+                            <Song song=song actions={vec![SongAction::PlayNow, SongAction::AddToQueue]}/>
                         }
+                    }
 
-                    />
-                </div>
+                />
             </Suspense>
         </div>
     }

@@ -1,5 +1,6 @@
 img.album_art {
   height: 3rlh;
+  flex-shrink: 0;
 }
 
 p {
@@ -36,53 +37,47 @@ p.album {
 }
 
 div.container {
-  float: none;
-  width: 100%;
-  height: 3.5rlh; 
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2%;
+  padding-left: 2%; 
+  padding-right: 2%; 
 }
 
 div.container:hover {
-  // float: none;
-  // width: 100%;
   background-color: lightgray;
 }
 
 div.left {
-  float: left;
-  width: 70%;
+  display: flex;
+  justify-content: left;
+  width: 90%;
 }
 
 div.right {
-  float: right ;
-  width: 20%;
-  margin-right: 5vh;
-}
-
-div.row_group {
-  overflow: hidden;
   display: flex;
-  flex-direction: row;
-  margin-left: 10px;
-  margin-top: 4px;
+  justify-content: right;
+  width: 10%;
 }
 
 div.col_group {
   overflow: hidden;
-  align-self: left;
   display: flex;
   flex-direction: column;
 }
 
 
-div.col_group_art {
-  // overflow: hidden;
-  align-self: left;
-  display: flex;
-  flex-direction: column;
-}
+// div.col_group_art {
+//   flex-shrink: 0;
+//   align-self: flex-start;
+//   display: flex;
+//   flex-direction: column;
+// }
 
 input.button {
   height: 1rlh;
+  flex-shrink: 0;
 }
 
 div.actions {

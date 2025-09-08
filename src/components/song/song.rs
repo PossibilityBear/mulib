@@ -74,25 +74,20 @@ pub fn Song(song: Option<Song>, actions: Vec<SongAction>) -> impl IntoView {
 
             <div class=song::container >
                 <div class=song::left>
-                    <div class=song::row_group>
-                        <div class=song::col_group_art>
-                            //put album art here
-                            <img class=song::album_art src="/public/album-art-placeholder.svg"/>
-                        </div>
-                        <div class=song::col_group>
-                            <p class=song::title on:click=play_now>
-                                // title
-                                {format!("{}", song.get().expect("some song").title)}
-                            </p>
-                            <p class=song::artist>
-                                // artist 
-                                {format!("{}", song.get().expect("some song").artist.unwrap_or_default().name)}
-                            </p>
-                            <p class=song::album>
-                                // album 
-                                {format!("{}", song.get().expect("some song").album.unwrap_or_default().title)}
-                            </p>
-                        </div>
+                    <img class=song::album_art src="/public/album-art-placeholder.svg"/>
+                    <div class=song::col_group>
+                        <p class=song::title on:click=play_now>
+                            // title
+                            {format!("{}", song.get().expect("some song").title)}
+                        </p>
+                        <p class=song::artist>
+                            // artist 
+                            {format!("{}", song.get().expect("some song").artist.unwrap_or_default().name)}
+                        </p>
+                        <p class=song::album>
+                            // album 
+                            {format!("{}", song.get().expect("some song").album.unwrap_or_default().title)}
+                        </p>
                     </div>
                 </div>
                 <div class=song::right>

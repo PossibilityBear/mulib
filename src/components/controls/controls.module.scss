@@ -17,9 +17,13 @@ img.button {
 }
 
 p.time_stamp {
+    justify-self: center;
+    margin: 0px;
 }
 
 div.input_group {
   display: flex;
   justify-content: center;
+  justify-items: center;
+  align-items: center;
 }

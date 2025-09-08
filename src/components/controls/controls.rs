@@ -3,7 +3,7 @@ use leptos::{ev, html::{self, p}, leptos_dom::logging::console_log, prelude::*, 
 use leptos_use::{use_event_listener, use_window};
 use stylance::import_crate_style;
 use serde::{Serialize, Deserialize};
-use crate::{components::queue::queue::SongQueue, models::{
+use crate::{components::{controls::controls::controls::input_group, queue::queue::SongQueue}, models::{
         album::{Album, AlbumDBModel}, 
         artist::{Artist, ArtistDBModel}, 
         song::Song
@@ -33,7 +33,8 @@ struct SongProgress {
 
 #[component]
 pub fn Controls(
-    queue: SongQueue
+    queue: SongQueue,
+    show_queue: RwSignal<bool>
 ) -> impl IntoView {
 
     let audio_ref = NodeRef::<html::Audio>::new();
@@ -99,6 +100,9 @@ pub fn Controls(
     };
 
     
+    let toggle_queue = move |_| {
+        *show_queue.write() = !show_queue.get();
+    };
 
 
     view!{
@@ -116,6 +120,7 @@ pub fn Controls(
             }>
             </audio>
             <div class=controls::input_group>
+                // playback controls
                 <input
                     type="image"
                     src=move || {
@@ -142,6 +147,7 @@ pub fn Controls(
                         queue.set_playback_state(PlaybackState::SkipForward);
                     }
                 /> 
+                // volume controls
                 <div class=controls::input_group>
                     <image class=controls::button src="/public/volume-icon.svg"/>
                     <input type="range" 
@@ -158,45 +164,54 @@ pub fn Controls(
                         }
                     />
                 </div>
-            </div>
-            <div class=controls::input_group>
-                <input type="range" 
-                    min="0" 
-                    node_ref=song_progress_ref
-                    max=move || {song_progress.get().duration} 
-                    prop:value=move || {
-                        if queue.peek_front().is_none() {
-                            0.0
-                        } else {
-                            song_progress.get().current
-                        }
-                    }
-                    on:change=move |event| {
-                        if let (Some(range), Some(audio)) = (song_progress_ref.get(), audio_ref.get()) {
-                            audio.set_current_time(range.value().parse::<f64>().expect("to convert range value to float"));
-                        }
-                        // todo!()
-                    }
+                // Queue visibility toggle
+                <input 
+                    type="image" 
+                    src={move || {if show_queue.get() {"/public/hide-queue.svg"} else {"/public/show-queue.svg"}}}
+                    on:click=toggle_queue
                 />
-                <p class=controls::time_stamp> {move || {
-                    if queue.peek_front().is_some() && queue.get_playback_state() == PlaybackState::Play {
-                        let mut duration = song_progress.get().duration;
-                        if duration.is_nan() {
-                            duration = 0.0;
+                </div>
+                // Song Progress Bar
+                <div class=controls::input_group>
+                    <input type="range" 
+                        min="0" 
+                        node_ref=song_progress_ref
+                        max=move || {song_progress.get().duration} 
+                        prop:value=move || {
+                            if queue.peek_front().is_none() {
+                                0.0
+                            } else {
+                                song_progress.get().current
+                            }
                         }
-                        let current = song_progress.get().current;
+                        on:change=move |event| {
+                            if let (Some(range), Some(audio)) = (song_progress_ref.get(), audio_ref.get()) {
+                                audio.set_current_time(range.value().parse::<f64>().expect("to convert range value to float"));
+                            }
+                            // todo!()
+                        }
+                    />
+                    <p class=controls::time_stamp> {move || {
+                        if queue.peek_front().is_some() && queue.get_playback_state() == PlaybackState::Play {
+                            let mut duration = song_progress.get().duration;
+                            if duration.is_nan() {
+                                duration = 0.0;
+                            }
+                            let current = song_progress.get().current;
 
-                        let current_minutes = (current / 60.0).floor();
-                        let current_seconds = current % 60.0;
+                            let current_minutes = (current / 60.0).floor();
+                            let current_seconds = current % 60.0;
 
-                        let duration_minutes = (duration / 60.0).floor();
-                        let duration_seconds = duration % 60.0;
+                            let duration_minutes = (duration / 60.0).floor();
+                            let duration_seconds = duration % 60.0;
 
-                        format!("{current_minutes:01.0}:{current_seconds:02.0} / {duration_minutes:01.0}:{duration_seconds:02.0}")
-                    } else {
-                        format!("0:00 / 0:00")
-                    }
-                }}</p>
+                            format!("{current_minutes:01.0}:{current_seconds:02.0} / {duration_minutes:01.0}:{duration_seconds:02.0}")
+                        } else {
+                            format!("0:00 / 0:00")
+                        }
+                    }}</p>
+                </div>
+            <div class=controls::input_group>
             </div>
         </div>
     }
