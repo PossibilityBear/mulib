@@ -70,14 +70,6 @@ impl SongQueue {
         });
     } 
 
-    // pub fn remove_songs(&self, song_id: u32) {
-    //     self.context.songs.update(|sq| {
-    //         if let Some(song_index) = sq.iter().position(|x| x.id == Some(song_id)) {
-    //             sq.remove(song_index);
-    //         }
-    //     });
-    // }
-
     pub fn remove_songs(&self, entry_id: Uuid) {
         self.context.songs.update(|sq| {
             if let Some(song_index) = sq.iter().position(|x| x.id == entry_id) {

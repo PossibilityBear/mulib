@@ -10,23 +10,6 @@ use crate::{components::{controls::controls::PlaybackState, queue::queue::{SongQ
     }};
     
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct SongData {
-    title: String,
-    author: String,
-    album: String,
-    song_id: u32,
-}
-impl Default for SongData {
-    fn default() -> Self {
-        Self { 
-            title: "loading....".to_string(), 
-            author: "loading....".to_string(), 
-            album:  "loading....".to_string(), 
-            song_id: 0,
-        }
-    }
-}
 
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum SongAction {
@@ -99,6 +82,13 @@ pub fn Song(song: Option<Song>, actions: Vec<SongAction>) -> impl IntoView {
                             })
                         } else {
                             None
+                        {if is_remove_from_queue{
+                            Some(view! {
+                                <input class=song::button type="image" src="/public/add-to-queue.svg" on:click=add_to_queue/>
+                            })
+                        } else {
+                            None
+                        }}
                         }}
                     </div>
                 </div>
