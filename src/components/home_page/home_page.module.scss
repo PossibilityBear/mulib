@@ -1,4 +1,24 @@
-div.song_list {
-	max-width: 95%;
-	margin: auto;
+h1.title {
+	height: 5%;
+	margin:auto;
+	text-align: center;
+	display: block;
+}
+div.container {
+	height: 100dvh;
+}
+
+div.main_view {
+	display: flex;
+	width: 100dvw;
+	height: 80%; 
+}
+
+div.controls {
+	display: flex;
+	justify-content: center;
+	padding-top: 2%;
+	height: 13%;
+	width: 100dvw;
+	background-color: lightgray;
 }

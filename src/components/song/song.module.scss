@@ -1,0 +1,90 @@
+img.album_art {
+  height: 3rlh;
+}
+
+p {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+p.title {
+  font-weight: 700;
+  margin: 0px;
+  margin-left: .5rlh;
+  cursor: pointer;
+}
+p.title:hover {
+  font-weight: 700;
+  margin: 0px;
+  margin-left: .5rlh;
+  cursor: pointer;
+  color: green;
+}
+
+p.artist {
+  font-weight: 300;
+  margin: 0px;
+  margin-left: .5rlh;
+}
+
+p.album {
+  font-weight: 300;
+  margin: 0px;
+  margin-left: .5rlh;
+  font-style: italic;
+}
+
+div.container {
+  float: none;
+  width: 100%;
+  height: 3.5rlh; 
+}
+
+div.container:hover {
+  // float: none;
+  // width: 100%;
+  background-color: lightgray;
+}
+
+div.left {
+  float: left;
+  width: 70%;
+}
+
+div.right {
+  float: right ;
+  width: 20%;
+  margin-right: 5vh;
+}
+
+div.row_group {
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+  margin-left: 10px;
+  margin-top: 4px;
+}
+
+div.col_group {
+  overflow: hidden;
+  align-self: left;
+  display: flex;
+  flex-direction: column;
+}
+
+
+div.col_group_art {
+  // overflow: hidden;
+  align-self: left;
+  display: flex;
+  flex-direction: column;
+}
+
+input.button {
+  height: 1rlh;
+}
+
+div.actions {
+  float:right;
+}

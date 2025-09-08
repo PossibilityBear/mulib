@@ -3,7 +3,7 @@
    viewBox="0 0 500 500"
    version="1.1"
    id="svg630"
-   sodipodi:docname="add-to-queue.svg"
+   sodipodi:docname="show-queue.svg"
    inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -21,8 +21,8 @@
      inkscape:deskcolor="#505050"
      showgrid="false"
      inkscape:zoom="1.1950105"
-     inkscape:cx="112.13291"
-     inkscape:cy="297.06853"
+     inkscape:cx="145.60542"
+     inkscape:cy="179.07792"
      inkscape:window-width="1886"
      inkscape:window-height="1011"
      inkscape:window-x="0"
@@ -39,33 +39,28 @@
     </bx:export>
   </defs>
   <rect
-     x="14.107"
-     y="381.317"
-     width="471.762"
-     height="92.284"
-     style="stroke: rgb(0, 0, 0); stroke-width: 1px;"
+     x="14"
+     y="381.31699"
+     width="471.76199"
+     height="92.283997"
+     style="stroke:#000000;stroke-width:1px"
      id="rect620" />
-  <g
-     style=""
-     transform="matrix(2.044942, 0, 0, 2.301, -668.124756, -204.794739)"
-     id="g624">
-    <path
-       d="M 388.657 93.853 L 388.657 115.298 L 412.787 115.298 L 412.787 140.441 L 388.657 140.441 L 388.657 161.886 L 360.366 161.886 L 360.366 140.441 L 336.235 140.441 L 336.235 115.298 L 360.366 115.298 L 360.366 93.853 L 388.657 93.853 Z"
-       style="stroke: rgb(0, 0, 0); stroke-width: 1px;"
-       id="path622" />
-  </g>
   <rect
-     x="14.113"
-     y="212.304"
-     width="471.762"
-     height="92.284"
-     style="stroke: rgb(0, 0, 0); stroke-width: 1px;"
+     x="14"
+     y="211.62442"
+     width="471.76199"
+     height="92.283997"
+     style="stroke:#000000;stroke-width:1px"
      id="rect626" />
   <rect
-     x="202.007"
-     y="43.291"
-     width="283.862"
-     height="92.284"
-     style="stroke: rgb(0, 0, 0); stroke-width: 1px;"
-     id="rect628" />
+     x="49.868225"
+     y="80.617905"
+     width="400.02527"
+     height="14.912629"
+     style="stroke:#000000;stroke-width:0.370166px"
+     id="rect626-3" />
+  <path
+     id="rect626-7"
+     style="stroke:#000000;stroke-width:1px"
+     d="M 14 41.931641 L 14 134.2168 L 485.76172 134.2168 L 485.76172 41.931641 L 14 41.931641 z M 29.355469 58.144531 L 470.40625 58.144531 L 470.40625 118.00195 L 29.355469 118.00195 L 29.355469 58.144531 z " />
 </svg>
