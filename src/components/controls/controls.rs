@@ -114,7 +114,7 @@ pub fn Controls(
             autoplay=move || {queue.get_playback_state() == PlaybackState::Play} 
             src = move || {
                 match queue.peek_front() {
-                    Some(song) => Some(song.file_path.clone()),
+                    Some(entry) => Some(entry.song.file_path.clone()),
                     None => None
                 }
             }>

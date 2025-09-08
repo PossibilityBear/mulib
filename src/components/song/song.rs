@@ -56,6 +56,7 @@ pub fn Song(song: Option<Song>, actions: Vec<SongAction>) -> impl IntoView {
     let is_add_to_queue = actions.contains(&SongAction::AddToQueue);
     let add_to_queue = move |_| {
         if is_add_to_queue {
+            console_log(&format!("adding song: {} to queue", song.get().expect("To find song").title));
             queue.push_back(song.get().expect("to find song"));
         }
     };
