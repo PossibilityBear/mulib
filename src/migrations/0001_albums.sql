@@ -1,0 +1,7 @@
+
+CREATE TABLE IF NOT EXISTS Albums
+(
+    id INTEGER PRIMARY KEY,
+    title TEXT NOT NULL,
+    artist_id INTEGER
+)

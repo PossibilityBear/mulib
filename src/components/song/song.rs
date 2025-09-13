@@ -1,13 +1,6 @@
-use std::{clone, collections::VecDeque};
 use leptos::{leptos_dom::logging::console_log, prelude::*};
-use std::ops::Range;
 use stylance::import_crate_style;
-use serde::{Serialize, Deserialize};
-use crate::{components::{controls::controls::PlaybackState, queue::queue::{SongQueue, SongQueueContext}}, models::{
-        album::{Album, AlbumDBModel}, 
-        artist::{Artist, ArtistDBModel}, 
-        song::Song
-    }};
+use crate::{components::{controls::controls::PlaybackState, queue::queue::{SongQueue, SongQueueContext}}, models::song::Song};
     
 
 
@@ -19,7 +12,7 @@ pub enum SongAction {
 }
 
 import_crate_style!(song, "./src/components/song/song.module.scss");
-import_crate_style!(main_style, "./src/styles/main.module.scss");
+// import_crate_style!(main_style, "./src/styles/main.module.scss");
 // a single song
 #[component] 
 pub fn Song(song: Option<Song>, actions: Vec<SongAction>) -> impl IntoView {

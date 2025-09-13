@@ -3,20 +3,21 @@ use std::io;
 use std::path::*;
 use id3::{
     frame::{
-        Chapter, Comment, EncapsulatedObject, ExtendedLink, ExtendedText, InvolvedPeopleList,
-        InvolvedPeopleListItem, Lyrics, Picture, Popularimeter, SynchronisedLyrics,
+        Picture, 
         UniqueFileIdentifier,
     },
     Content, Tag,
 };
 
-use crate::models::album::Album;
-use crate::models::artist::Artist;
-use crate::models::song::Song;
+use crate::models::album::ParsedAlbum;
+use crate::models::artist::ParsedArtist;
+use crate::models::song::ParsedSong;
 
-pub fn read_music(path: PathBuf) -> io::Result<Vec<Song>>{
+/// Recursively reads through provided dir 
+/// and parses metadata on all songs found
+pub fn read_music(path: PathBuf) -> io::Result<Vec<ParsedSong>>{
     let dir = read_dir(path)?;
-    let mut songs = Vec::<Song>::new();
+    let mut songs = Vec::<ParsedSong>::new();
     for entry in dir {
         let e = entry?;
         if !e.path().is_dir() {
@@ -26,10 +27,9 @@ pub fn read_music(path: PathBuf) -> io::Result<Vec<Song>>{
             };
 
 
-            let mut album: Option<Album> = None;
-            let mut contributing_artist: Option<Artist> = None;
-            let mut album_artist: Option<Artist> = None;
-            // TODO: unwrap my shiddy unwraps      
+            let mut album: Option<ParsedAlbum> = None;
+            let mut contributing_artist: Option<ParsedArtist> = None;
+            let mut album_artist: Option<ParsedArtist> = None;
             let mut title: String = e.file_name().into_string().expect("file name to be String compatible");
 
             for frame in tag.frames() {
@@ -39,21 +39,21 @@ pub fn read_music(path: PathBuf) -> io::Result<Vec<Song>>{
                         match id {
                             "TPE1" => {
                                 //contributing artist
-                                contributing_artist = Some(Artist {
+                                contributing_artist = Some(ParsedArtist {
                                     id: None,
                                     name: value.to_string(),
                                 })
                             }
                             "TPE2" => {
                                 //album artist
-                                album_artist = Some(Artist {
+                                album_artist = Some(ParsedArtist {
                                     id: None,
                                     name: value.to_string(),
                                 })
                             }
                             "TALB" => {
                                 //album 
-                                album = Some(Album {
+                                album = Some(ParsedAlbum {
                                     id: None,
                                     title: value.to_string(),
                                     artist: None,
@@ -67,19 +67,19 @@ pub fn read_music(path: PathBuf) -> io::Result<Vec<Song>>{
                         }
                     }
                     Content::Picture(Picture {
-                        mime_type,
-                        picture_type,
-                        description,
+                        mime_type: _,
+                        picture_type: _,
+                        description: _,
                         data,
                     }) => {
                         let size = data.len();
                         // println!("{id}:{picture_type}=<image, {mime_type}, description {description:?}, {size} bytes>");
                     }
                     Content::UniqueFileIdentifier(UniqueFileIdentifier {
-                        owner_identifier,
+                        owner_identifier: _,
                         identifier,
                     }) => {
-                        let value = identifier
+                        let _value = identifier
                             .iter()
                             .map(|&byte| {
                                 char::from_u32(byte.into())
@@ -97,7 +97,7 @@ pub fn read_music(path: PathBuf) -> io::Result<Vec<Song>>{
             }
             
             songs.push(
-                Song {
+                ParsedSong {
                     id: None,
                     title: title,
                     file_path: e.path().as_mut_os_string().clone().into_string().expect("file path to be String compatible"),

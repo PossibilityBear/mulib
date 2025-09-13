@@ -17,4 +17,6 @@ Cargo.lock
 # ignore style files 'compiled' from stylance
 stylance/
 music/
-Music.db
+music.db
+music.db-wal
+music.db-shm

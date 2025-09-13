@@ -24,14 +24,18 @@ impl Default for SongData {
     }
 }
 
-#[server]
+#[server(
+    prefix = "/api",
+    endpoint = "get_songs"
+)]
 pub async fn get_songs(list_id: u32) -> Result<Vec<Song>, ServerFnError> {
+    use crate::app_state::AppState;
     use crate::database::commands::get_songs::get_songs;
-    use crate::database::utils::db_connection::*;
+
+    let state = use_context::<AppState>().expect("To Have Found App State");
 
     println!("hello from get songs");
-    let conn = DbConnection::default(); 
-    let songs = get_songs(conn);
+    let songs = get_songs(&state.db).await?;
 
     Ok(songs)
 
@@ -43,7 +47,7 @@ import_crate_style!(style, "./src/components/song_list/song_list.module.scss");
 pub fn SongList (
     list_id: u32
 ) -> impl IntoView {
-    let (list_id, set_list_id) = signal(list_id);
+    let (list_id, _) = signal(list_id);
 
     let songs_res = Resource::new(
         move || {
@@ -72,11 +76,7 @@ pub fn SongList (
                     }
                     key=|song| {
                         if let Some(s) = song {
-                            if let Some(id) = s.id {
-                                id
-                            } else {
-                                0
-                            }   
+                            s.id
                         } else {
                             0
                         }

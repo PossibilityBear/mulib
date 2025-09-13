@@ -1,13 +1,7 @@
-use std::{clone, collections::VecDeque, default, time::Duration};
-use leptos::{ev, html::{self, p}, leptos_dom::logging::console_log, prelude::*, tachys::html::style};
-use leptos_use::{use_event_listener, use_window};
+use leptos::{ev, html::{self, p}, leptos_dom::logging::console_log, prelude::*};
+use leptos_use::{use_event_listener};
 use stylance::import_crate_style;
-use serde::{Serialize, Deserialize};
-use crate::{components::{controls::controls::controls::input_group, queue::queue::SongQueue}, models::{
-        album::{Album, AlbumDBModel}, 
-        artist::{Artist, ArtistDBModel}, 
-        song::Song
-    }};
+use crate::components::queue::queue::SongQueue;
     
 import_crate_style!(main_style, "./src/styles/main.module.scss");
 import_crate_style!(controls, "./src/components/controls/controls.module.scss");

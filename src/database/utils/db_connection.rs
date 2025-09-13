@@ -1,25 +1,29 @@
-use std::{clone, sync::{Arc, Mutex, MutexGuard}};
-use rusqlite::{Connection, Result};
+// use std::{clone, sync::{Arc, Mutex, MutexGuard}};
+use sqlx::{migrate::MigrateDatabase, Pool, Sqlite, SqlitePool};
 
 
-const DB_CONN_STR: &str = "./Music.db";
-
-pub type Db<'a> = MutexGuard<'a, Connection>;
+const DB_CONN_STR: &str = "sqlite://music.db";
 
 #[derive(Clone, Debug)]
 pub struct DbConnection {
-    db: Arc<Mutex<Connection>>
+    pub db: Pool<Sqlite>
 }
 
-impl Default for DbConnection {
-    fn default() -> Self {
-        let db_conn = Connection::open(DB_CONN_STR).unwrap();
-        let db = Arc::new(Mutex::new(db_conn));
+impl DbConnection {
+    pub async fn new() -> Self {
+        if !Sqlite::database_exists(DB_CONN_STR).await.unwrap_or(false) {
+            println!("Creating database {}", DB_CONN_STR);
+            match Sqlite::create_database(DB_CONN_STR).await {
+                Ok(_) => println!("Create db success"),
+                Err(error) => panic!("error: {}", error),
+            }
+        } else {
+            println!("Database already exists");
+        }
+
+        let db = SqlitePool::connect(DB_CONN_STR).await.unwrap();
         Self { db }
     }
 }
-impl DbConnection {
-    pub fn db(&self) -> Db {
-        self.db.lock().unwrap()
-    }
-}
+
+

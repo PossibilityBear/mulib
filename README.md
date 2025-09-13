@@ -3,7 +3,8 @@
 - Leptos framework for GUI
 - Stylance library for scoped external scss for leptos components
 - uuid for unique identifiers
-- SQLite database with rusqlite Database Driver (should switch to sqlx or something)
+- SQLite database with sqlx Database Driver 
+
 # CSS Configurations:
 Configuration of project environment is largely controlled by cargo.toml there 
 is also a fish script "./watch.fish" that is configured to preprocess stylance 
@@ -14,11 +15,19 @@ the cargo.toml is then confingured for cargo leptos to look for styles in the
 from here cargo leptos watches for changes and will put the processes scss 
 file into ./target/site/package/
 
+# .Env
+There is a .env file at the project root which points sqlx to the 
+location of the music database for compile time validation of 
+sql exectued through sqlx macros.
+
 # Development serve and watch with:
 ```fish
 fish ./watch.fish
 ```
-
+This does 3 things:
+1. runs sqlx migration prior to startup (otherwise macros get mad)
+2. starts stylance with watch
+3. starts leptos with watch
 
 # Getting compilation errors from uuid or get_random?
 This is likely due to the get_random create not knowing which target to 
@@ -28,10 +37,8 @@ cargo.toml,
 [dependancies]
 .
 .
-.
 uuid = {version="1.18.1", features = ["v4", "std", "js"]}
 getrandom = { version = "0.3.3", features = ["wasm_js"] }
-.
 .
 .
 ```

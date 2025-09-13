@@ -1,4 +1,7 @@
 
+use std::vec;
+
+use serde::{Deserialize, Serialize};
 use sqlx::Error;
 
 use crate::database::db_models::*;
@@ -7,7 +10,10 @@ use crate::models::artist::Artist;
 use crate::database::utils::db_connection::*;
 use crate::models::song::Song;
 
-pub async fn get_songs(conn: &DbConnection) -> Result<Vec<Song>, Error> {
+/// blindly retreives all songs from the database
+/// for use in a 'dumb diff' approach to merging
+/// songs from local music library into database.
+pub async fn get_all_songs(conn: &DbConnection) -> Result<Vec<Song>, Error> {
     let result = sqlx::query_as!(
         db_song::DbSong,
         "
