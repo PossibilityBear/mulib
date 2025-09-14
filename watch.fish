@@ -1,12 +1,19 @@
 ## fish script to start dev watch and serve 
 
 ## Environment variables
-# path to sqlite database
-set DATABASE_URL "sqlite://sqlite/music.db"
+# path to sqlite database 
+# (note for development if location changes also 
+# change DATABSE_URL in .env for accurate suggestions in code editor)
+set -x DATABASE_NAME            "music.db"
+set -x DATABASE_URL             "sqlite://sqlite/$DATABASE_NAME"
+set -x DATABSE_CREATE_PATH      "./sqlite/$DATABASE_NAME"
+
 # set backend fo getrandom needed to generate UUIDs in frontend
-set RUSTFLAGS '--cfg getrandom_backend="wasm_js"' 
+set RUSTFLAGS                   '--cfg getrandom_backend="wasm_js"' 
 
 ## Startup
+# create database file if not exists
+touch $DATABSE_CREATE_PATH
 # pre-run sqlx migrations to allow use of query!() macro compile time validation
 fish -c "cargo sqlx migrate run --source ./src/migrations"
 

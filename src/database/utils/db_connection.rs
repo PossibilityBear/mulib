@@ -1,8 +1,7 @@
-// use std::{clone, sync::{Arc, Mutex, MutexGuard}};
 use sqlx::{migrate::MigrateDatabase, Pool, Sqlite, SqlitePool};
+use std::env;
 
-
-const DB_CONN_STR: &str = "sqlite://sqlite/music.db";
+const DB_CONN_STR_ENV_KEY: &str = "DATABASE_URL";
 
 #[derive(Clone, Debug)]
 pub struct DbConnection {
@@ -11,9 +10,12 @@ pub struct DbConnection {
 
 impl DbConnection {
     pub async fn new() -> Self {
-        if !Sqlite::database_exists(DB_CONN_STR).await.unwrap_or(false) {
-            println!("Creating database {}", DB_CONN_STR);
-            match Sqlite::create_database(DB_CONN_STR).await {
+        let db_conn_str = &env::var(DB_CONN_STR_ENV_KEY)
+            .expect(&format!("To have found env var {}", DB_CONN_STR_ENV_KEY));
+
+        if !Sqlite::database_exists(db_conn_str).await.unwrap_or(false) {
+            println!("Creating database {}", db_conn_str);
+            match Sqlite::create_database(db_conn_str).await {
                 Ok(_) => println!("Create db success"),
                 Err(error) => panic!("error: {}", error),
             }
@@ -21,7 +23,7 @@ impl DbConnection {
             println!("Database already exists");
         }
 
-        let db = SqlitePool::connect(DB_CONN_STR).await.unwrap();
+        let db = SqlitePool::connect(db_conn_str).await.unwrap();
         Self { db }
     }
 }
