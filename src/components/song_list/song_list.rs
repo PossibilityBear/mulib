@@ -33,7 +33,6 @@ pub async fn get_songs(_list_id: u32) -> Result<Vec<Song>, ServerFnError> {
 
     let state = use_context::<AppState>().expect("To Have Found App State");
 
-    println!("hello from get songs");
     let songs = get_songs(&state.db).await?;
 
     Ok(songs)

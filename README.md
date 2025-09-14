@@ -1,3 +1,8 @@
+# Mulib
+A personal web app to stream and manage a local music library as a replacement
+for spotify, currently in early development as a barebones web music player.
+
+
 # General Tech Stack 
 - Axum web server
 - Leptos framework for GUI
@@ -96,7 +101,7 @@ rustflags = ['--cfg', 'getrandom_backend="wasm_js"']
 2. perform suggested fix of installing up-to-date wasm-bindgen-cli
     (again not certain this necissary) 
     ```sh
-        cargo install -f wasm-bindgen-cli --version {{Target Version Number}}
+    cargo install -f wasm-bindgen-cli --version {{Target Version Number}}
     ```
 
 3. Update cargo leptos

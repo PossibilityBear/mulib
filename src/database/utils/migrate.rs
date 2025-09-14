@@ -22,6 +22,4 @@ pub async fn migrate(conn: &DbConnection) {
             panic!("error: {}", error);
         }
     }
-
-    println!("migration: {:?}", migration_results);
 }
