@@ -1,8 +1,7 @@
-use std::{clone, collections::VecDeque};
 use leptos::prelude::*;
 use stylance::import_crate_style;
 use serde::{Serialize, Deserialize};
-use crate::{components::{queue::queue::{SongQueue, SongQueueContext}, song::song::{Song, SongAction}}, models::song::Song};
+use crate::{components::song::song::{Song, SongAction}, models::song::Song};
     
 
 
@@ -28,7 +27,7 @@ impl Default for SongData {
     prefix = "/api",
     endpoint = "get_songs"
 )]
-pub async fn get_songs(list_id: u32) -> Result<Vec<Song>, ServerFnError> {
+pub async fn get_songs(_list_id: u32) -> Result<Vec<Song>, ServerFnError> {
     use crate::app_state::AppState;
     use crate::database::commands::get_songs::get_songs;
 

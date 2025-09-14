@@ -72,7 +72,7 @@ pub fn read_music(path: PathBuf) -> io::Result<Vec<ParsedSong>>{
                         description: _,
                         data,
                     }) => {
-                        let size = data.len();
+                        let _size = data.len();
                         // println!("{id}:{picture_type}=<image, {mime_type}, description {description:?}, {size} bytes>");
                     }
                     Content::UniqueFileIdentifier(UniqueFileIdentifier {

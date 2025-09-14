@@ -109,7 +109,6 @@ impl SongQueue {
 }
 
 
-import_crate_style!(main_style, "./src/styles/main.module.scss");
 import_crate_style!(queue, "./src/components/queue/queue.module.scss");
 #[component]
 pub fn Queue() -> impl IntoView {

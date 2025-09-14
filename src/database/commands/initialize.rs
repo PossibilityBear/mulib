@@ -1,9 +1,14 @@
 use std::collections::HashMap;
 use sqlx::Error;
-use crate::{database::{db_models::*, utils::{get_all_songs::get_all_songs, migrate::migrate}}, models::{
-        album::{Album, ParsedAlbum}, 
-        artist::{Artist, ParsedArtist}, 
-        song::{ParsedSong, Song}
+use crate::{
+    database::{
+        db_models::*, 
+        utils::get_all_songs::get_all_songs
+    }, 
+    models::{
+        album::ParsedAlbum, 
+        artist::ParsedArtist, 
+        song::ParsedSong
     }};
 use crate::database::utils::db_connection::*;
 use crate::database::utils::song_import::read_music;

@@ -1,4 +1,4 @@
-use leptos::{ev, html::{self, p}, leptos_dom::logging::console_log, prelude::*};
+use leptos::{ev, html::{self}, leptos_dom::logging::console_log, prelude::*};
 use leptos_use::{use_event_listener};
 use stylance::import_crate_style;
 use crate::components::queue::queue::SongQueue;
@@ -178,7 +178,7 @@ pub fn Controls(
                                 song_progress.get().current
                             }
                         }
-                        on:change=move |event| {
+                        on:change=move |_event| {
                             if let (Some(range), Some(audio)) = (song_progress_ref.get(), audio_ref.get()) {
                                 audio.set_current_time(range.value().parse::<f64>().expect("to convert range value to float"));
                             }

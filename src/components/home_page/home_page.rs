@@ -1,5 +1,4 @@
 
-use std::collections::VecDeque;
 
 use leptos::prelude::*;
 use stylance::import_crate_style;
@@ -7,9 +6,7 @@ use crate::components::song_list::song_list::SongList;
 use crate::components::controls::controls::Controls;
 use crate::components::queue::queue::{Queue, SongQueueContext};
 
-use crate::models::song::Song;
 
-import_crate_style!(main_style, "./src/styles/main.module.scss");
 import_crate_style!(home_page, "./src/components/home_page/home_page.module.scss");
 #[component]
 pub fn HomePage() -> impl IntoView {

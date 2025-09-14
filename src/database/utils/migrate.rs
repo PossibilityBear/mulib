@@ -1,6 +1,6 @@
 use crate::database::utils::db_connection::DbConnection;
 use sqlx::migrate::Migrator;
-use std::{ffi::OsString, path::Path};
+use std::path::Path;
 
 const MIGRATIONS_DIR: &str = "./src/migrations";
 

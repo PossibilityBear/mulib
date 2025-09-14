@@ -1,8 +1,6 @@
 use axum::{body::Body, extract::{Request, State}, response::{IntoResponse, Response}};
-use leptos::{prelude::provide_context, view};
+use leptos::prelude::provide_context;
 use leptos_axum::{handle_server_fns_with_context, render_app_to_stream_with_context};
-
-use crate::components::app::App;
 
 pub mod components;
 pub mod models;
