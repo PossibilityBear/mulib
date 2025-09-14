@@ -1,12 +1,14 @@
 use crate::database::utils::db_connection::DbConnection;
 use sqlx::migrate::Migrator;
 use std::path::Path;
+use std::env;
 
-const MIGRATIONS_DIR: &str = "./src/migrations";
+const MIGRATIONS_PATH_ENV_KEY: &str = "DATABASE_MIRGRATIONS_PATH";
 
 pub async fn migrate(conn: &DbConnection) {
-    let crate_dir = "./";
-    let migrations = Path::new(&crate_dir).join(MIGRATIONS_DIR);
+    let mig_pat_str = &env::var(MIGRATIONS_PATH_ENV_KEY)
+        .expect(&format!("To have found env var {}", MIGRATIONS_PATH_ENV_KEY));
+    let migrations = Path::new(mig_pat_str);
 
     let migration_results = Migrator::new(migrations)
         .await
