@@ -2,7 +2,7 @@
 
 ## Environment variables
 # path to sqlite database
-set DATABASE_URL "sqlite://music.db"
+set DATABASE_URL "sqlite://sqlite/music.db"
 # set backend fo getrandom needed to generate UUIDs in frontend
 set RUSTFLAGS '--cfg getrandom_backend="wasm_js"' 
 

@@ -2,7 +2,7 @@
 use sqlx::{migrate::MigrateDatabase, Pool, Sqlite, SqlitePool};
 
 
-const DB_CONN_STR: &str = "sqlite://music.db";
+const DB_CONN_STR: &str = "sqlite://sqlite/music.db";
 
 #[derive(Clone, Debug)]
 pub struct DbConnection {
