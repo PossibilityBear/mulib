@@ -17,3 +17,20 @@ impl Into<ParsedArtist> for Artist {
         ParsedArtist { id: Some(self.id), name: self.name}
     }
 }
+
+
+impl Artist {
+    /// creates a new artist or returns None if an artist
+    /// cannot be constructed with given parameters
+    pub fn new_or_none(id: Option<i64>, name: Option<String>) -> Option<Self> {
+        match (id, name) {
+            (Some(id), Some(name)) => {
+                Some(Self {id, name})
+            }
+            (Some(id), None) => {
+                Some(Self {id, name: String::new()})
+            },
+            (_, _) => None,
+        }
+    }
+}

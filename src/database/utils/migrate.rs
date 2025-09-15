@@ -3,7 +3,7 @@ use sqlx::migrate::Migrator;
 use std::path::Path;
 use std::env;
 
-const MIGRATIONS_PATH_ENV_KEY: &str = "DATABASE_MIRGRATIONS_PATH";
+const MIGRATIONS_PATH_ENV_KEY: &str = "DATABASE_MIGRATIONS_PATH";
 
 pub async fn migrate(conn: &DbConnection) {
     let mig_pat_str = &env::var(MIGRATIONS_PATH_ENV_KEY)

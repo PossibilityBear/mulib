@@ -176,7 +176,14 @@ async fn init_albums(songs: &Vec<ParsedSong>, artists: &HashMap<String, i64>, co
     let result = sqlx::query_as!(
         db_album::DbAlbum,
         "
-        SELECT id, title, artist_id FROM Albums
+        SELECT 
+            alb.id, 
+            alb.title, 
+            alb.artist_id,
+            art.name AS artist_name
+        FROM Albums AS alb
+        LEFT JOIN Artists art
+            ON alb.artist_id = art.id
         "
     )
         .fetch_all(&conn.db)

@@ -2,8 +2,6 @@
 use sqlx::Error;
 
 use crate::database::db_models::*;
-use crate::models::album::Album;
-use crate::models::artist::Artist;
 use crate::database::utils::db_connection::*;
 use crate::models::song::Song;
 
@@ -36,39 +34,8 @@ pub async fn get_songs(conn: &DbConnection) -> Result<Vec<Song>, Error> {
         .unwrap();
 
 
-    let songs: Vec<Song> = result.iter().map(|res| { 
-        Song {
-            id: res.id,
-            title: res.title.clone(),
-            file_path: res.file_path.clone(),
-            artist: match (res.artist_id, res.artist_name.clone()) {
-                (Some(id), Some(name)) => {
-                    Some(Artist {
-                        id: id,
-                        name: name,
-                    })
-                },
-                (_, _)=> None
-            },
-            album: match (res.album_id, res.album_title.clone()) {
-                (Some(id), Some(title)) => {
-                    Some(Album {
-                        id: id,
-                        title: title,
-                        artist: match (res.album_artist_id, res.album_artist_name.clone()) {
-                            (Some(id), Some(name)) => {
-                                Some(Artist{
-                                    id: id,
-                                    name: name,
-                                })
-                            },
-                            (_, _) => None
-                        }
-                    })
-                },
-                (_, _) => None,
-            },
-        }
+    let songs: Vec<Song> = result.into_iter().map(|res| { 
+        res.into()
     }).collect();
 
     Ok(songs)
