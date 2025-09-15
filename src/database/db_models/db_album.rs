@@ -13,11 +13,7 @@ pub struct DbAlbum {
 
 impl Into<Album> for DbAlbum {
     fn into(self) -> Album {
-        let artist = match (self.artist_id, self.artist_name) {
-            (Some(id), Some(name)) => Some(Artist {id, name}),
-            (Some(id), None) => Some(Artist {id, name: String::new()}),
-            (_, _) => None
-        };
+        let artist = Artist::opt_new(self.artist_id, self.artist_name);
 
         Album { 
             id: self.id, 

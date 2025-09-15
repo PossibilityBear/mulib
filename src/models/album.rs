@@ -29,6 +29,18 @@ impl Into<ParsedAlbum> for Album {
     }
 }
 
-
+impl Album {
+    pub fn opt_new(
+        id: Option<i64>, 
+        title: Option<String>, 
+        artist: Option<Artist>
+    ) -> Option<Self> {
+        match (id, title) {
+            (Some(id), Some(title)) => Some(Album {id, title, artist}),
+            (Some(id), None) => Some(Album {id, title: String::new(), artist}),
+            (_, _) => None,
+        }
+    }
+}
 
 

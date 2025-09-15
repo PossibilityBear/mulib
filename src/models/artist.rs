@@ -22,7 +22,7 @@ impl Into<ParsedArtist> for Artist {
 impl Artist {
     /// creates a new artist or returns None if an artist
     /// cannot be constructed with given parameters
-    pub fn new_or_none(id: Option<i64>, name: Option<String>) -> Option<Self> {
+    pub fn opt_new(id: Option<i64>, name: Option<String>) -> Option<Self> {
         match (id, name) {
             (Some(id), Some(name)) => {
                 Some(Self {id, name})

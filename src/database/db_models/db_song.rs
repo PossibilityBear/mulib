@@ -18,23 +18,10 @@ pub struct DbSong {
 
 impl Into<Song> for DbSong {
     fn into(self) -> Song {
-        let artist = match (self.artist_id, self.artist_name) {
-            (Some(id), Some(name)) => Some(Artist {id, name}),
-            (Some(id), None) => Some(Artist {id, name: String::new()}),
-            (_, _) => None
-        };
+        let artist = Artist::opt_new(self.artist_id, self.artist_name);
 
-        let alb_artist = match (self.album_artist_id, self.album_artist_name) {
-            (Some(id), Some(name)) => Some(Artist {id, name}),
-            (Some(id), None) => Some(Artist {id, name: String::new()}),
-            (_, _) => None
-        };
-
-        let album = match (self.album_id, self.album_title) {
-            (Some(id), Some(title)) => Some(Album {id, title, artist: alb_artist}),
-            (Some(id), None) => Some(Album {id, title: String::new(), artist: alb_artist}),
-            (_, _) => None,
-        };
+        let alb_artist = Artist::opt_new(self.album_artist_id, self.album_artist_name);
+        let album = Album::opt_new(self.album_id, self.album_title, alb_artist);
 
         Song {
             id: self.id,
