@@ -1,2 +1,3 @@
 pub mod initialize;
-pub mod get_songs;
+pub mod songs;
+pub mod playlists;

@@ -3,7 +3,7 @@ use sqlx::Error;
 use crate::{
     database::{
         db_models::*, 
-        utils::get_all_songs::get_all_songs
+        commands::songs::get_all_songs
     }, 
     models::{
         album::ParsedAlbum, 

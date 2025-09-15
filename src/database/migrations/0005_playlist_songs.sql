@@ -1,5 +1,5 @@
 
-CREATE TABLE IF NOT EXISTS PlaylistsSongs
+CREATE TABLE IF NOT EXISTS PlaylistSongs
 (
     [playlist_id]   INTEGER     NOT NULL,
     [song_id]       INTEGER     NOT NULL,

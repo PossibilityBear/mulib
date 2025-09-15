@@ -25,18 +25,17 @@ impl Default for SongData {
 
 #[server(
     prefix = "/api",
-    endpoint = "get_songs"
+    endpoint = "get_all_songs"
 )]
-pub async fn get_songs(_list_id: u32) -> Result<Vec<Song>, ServerFnError> {
+pub async fn get_all_songs(_list_id: u32) -> Result<Vec<Song>, ServerFnError> {
     use crate::app_state::AppState;
-    use crate::database::commands::get_songs::get_songs;
+    use crate::database::commands::songs::get_all_songs;
 
     let state = use_context::<AppState>().expect("To Have Found App State");
 
-    let songs = get_songs(&state.db).await?;
+    let songs = get_all_songs(&state.db).await?;
 
     Ok(songs)
-
 }
 
 import_crate_style!(style, "./src/components/song_list/song_list.module.scss");
@@ -51,7 +50,7 @@ pub fn SongList (
         move || {
             list_id.get()
         },
-        |id| {get_songs(id)}
+        |id| {get_all_songs(id)}
     );
 
 
