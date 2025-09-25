@@ -1,33 +1,21 @@
-use leptos::prelude::*;
+use leptos::{prelude::{ServerFnError, *}};
 use stylance::import_crate_style;
-use serde::{Serialize, Deserialize};
-use crate::{components::song::song::{Song, SongAction}, models::song::Song};
+use crate::{components::song::song::{Song, SongAction}, models::{album::Album, artist::Artist, playlist::Playlist, song::Song}};
     
-
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct SongData {
-    title: String,
-    author: String,
-    album: String,
-    song_id: u32,
-}
-impl Default for SongData {
-    fn default() -> Self {
-        Self { 
-            title: "loading....".to_string(), 
-            author: "loading....".to_string(), 
-            album:  "loading....".to_string(), 
-            song_id: 0,
-        }
-    }
+/// Defines the sorce of songs for the song list
+#[derive(Clone, PartialEq)]
+pub enum SongListSource {
+    Album(Album),
+    Artist(Artist),
+    Playlist(Playlist),
+    All,
 }
 
 #[server(
     prefix = "/api",
     endpoint = "get_all_songs"
 )]
-pub async fn get_all_songs(_list_id: u32) -> Result<Vec<Song>, ServerFnError> {
+pub async fn get_all_songs() -> Result<Vec<Song>, ServerFnError> {
     use crate::app_state::AppState;
     use crate::database::commands::songs::get_all_songs;
 
@@ -38,20 +26,60 @@ pub async fn get_all_songs(_list_id: u32) -> Result<Vec<Song>, ServerFnError> {
     Ok(songs)
 }
 
+#[server(
+    prefix = "/api",
+    endpoint = "get_playlist_songs"
+)]
+pub async fn get_playlist_songs(playlist: Playlist) -> Result<Vec<Song>, ServerFnError> {
+    use crate::app_state::AppState;
+    use crate::database::commands::playlists::get_playlist_songs;
+
+    let state = use_context::<AppState>().expect("To Have Found App State");
+
+    let songs = get_playlist_songs(&state.db, &playlist.id).await?;
+
+    Ok(songs)
+}
+
+
+
+/// helper function used to get around different concrete types
+/// returned from different functions that implement the Future
+/// trait but still have the output wrapped in a Future 
+/// which is required by the Resouce
+async fn song_source_helper(source: SongListSource) -> Result<Vec<Song>, ServerFnError> {
+    match source {
+        SongListSource::Album(_album) => todo!(),
+        SongListSource::Artist(_artist) => todo!(),
+        SongListSource::Playlist(playlist) => get_playlist_songs(playlist).await,
+        SongListSource::All => get_all_songs().await,
+    }
+}
+
 import_crate_style!(style, "./src/components/song_list/song_list.module.scss");
 // a list of songs from database
 #[component]
 pub fn SongList (
-    list_id: u32
+    source: ReadSignal<SongListSource>
 ) -> impl IntoView {
-    let (list_id, _) = signal(list_id);
 
     let songs_res = Resource::new(
         move || {
-            list_id.get()
+            source.get()
         },
-        |id| {get_all_songs(id)}
+        |source| {
+            song_source_helper(source)
+        }
     );
+
+    // let (list_id, _) = signal(list_id);
+
+    // let songs_res = Resource::new(
+    //     move || {
+    //         list_id.get()
+    //     },
+    //     |id| {get_all_songs(id)}
+    // );
 
 
     view! {
