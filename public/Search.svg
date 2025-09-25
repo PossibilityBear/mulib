@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="512"
+   height="512"
+   viewBox="0 0 512 512"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   sodipodi:docname="Search.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="px"
+     showgrid="true"
+     inkscape:lockguides="false"
+     showguides="true"
+     inkscape:zoom="1.2015291"
+     inkscape:cx="306.69253"
+     inkscape:cy="288.79866"
+     inkscape:window-width="1886"
+     inkscape:window-height="1011"
+     inkscape:window-x="2560"
+     inkscape:window-y="32"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="g981">
+    <inkscape:grid
+       type="xygrid"
+       id="grid9"
+       spacingx="16"
+       spacingy="16"
+       empspacing="4" />
+  </sodipodi:namedview>
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <g
+       id="g981"
+       transform="matrix(1.1200044,0,0,1.071124,-23.040845,-22.75968)">
+      <path
+         id="path1105"
+         style="fill:#000000;fill-opacity:0.971689;stroke:#000000;stroke-width:0;stroke-dasharray:none;stroke-opacity:1"
+         d="M 220.57132 66.061147 A 149.9994 156.84457 0 0 0 70.571906 222.90573 A 149.9994 156.84457 0 0 0 220.57132 379.75032 A 149.9994 156.84457 0 0 0 287.01044 363.21906 L 350.15716 429.24929 C 372.54201 452.65565 399.57415 462.07697 410.76658 450.37378 L 430.96914 429.24929 C 442.16157 417.54609 433.15143 389.28034 410.76658 365.87398 L 349.71597 302.03917 A 149.9994 156.84457 0 0 0 370.57073 222.90573 A 149.9994 156.84457 0 0 0 220.57132 66.061147 z M 220.57132 103.4051 A 114.28526 119.50063 0 0 1 334.85658 222.90573 A 114.28526 119.50063 0 0 1 220.57132 342.40637 A 114.28526 119.50063 0 0 1 106.28605 222.90573 A 114.28526 119.50063 0 0 1 220.57132 103.4051 z " />
+    </g>
+  </g>
+  <inkscape:templateinfo>
+    <inkscape:name>Icon 512</inkscape:name>
+    <inkscape:date>2025-09-21</inkscape:date>
+  </inkscape:templateinfo>
+</svg>
