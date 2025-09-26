@@ -19,7 +19,7 @@ touch $DATABASE_CREATE_PATH
 fish -c "cargo sqlx migrate run --source $DATABASE_MIGRATIONS_PATH"
 
 # run stylance with watch to preprocess CSS
-fish -c "~/.cargo/bin/stylance --watch . --output-dir ./" &
+fish -c "~/.cargo/bin/stylance --watch ." &
 
 # run leptos server with watch to serve app. 
 fish -c "cargo leptos watch" &
