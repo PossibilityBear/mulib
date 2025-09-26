@@ -103,7 +103,6 @@ pub fn Controls(
         <div>
             <audio 
             node_ref=audio_ref 
-            class=main_style::centered
             on:timeupdate=on_time_update
             autoplay=move || {queue.get_playback_state() == PlaybackState::Play} 
             src = move || {

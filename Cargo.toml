@@ -62,19 +62,6 @@ output-name = "mulib"
 # The site root folder is where cargo-leptos generate all output. WARNING: all content of this folder will be erased on a rebuild. Use it in your server setup.
 site-root = "target/site"
 
-# folders in which stylance cli will look for css module files.
-# defaults to ["./src/"]
-folders = ["./src/", "./style/"]
-
-# Stylance output_dir, when set stylance cli will create folder named styalnce here
-# which will be populated with scss files
-output_dir = "target/site"
-
-# files ending with these extensions will be considered to be
-# css modules by stylance cli and will be included in the output bundle
-# defaults to [".module.scss", ".module.css"]
-extensions = [".module.scss", ".module.css"]
-
 # The site-root relative folder where all compiled output (JS, WASM and CSS) is written
 # Defaults to pkg
 site-pkg-dir = "pkg"
@@ -135,4 +122,21 @@ lib-profile-release = "wasm-release"
 # A change to any file in those directories will trigger a rebuild.
 #
 # Optional.
-watch-additional-files = ["stylance"]
+# watch-additional-files = ["stylance"]
+
+
+
+[package.metadata.stylance]
+# Stylance output_dir, when set stylance cli will create folder named stylance here
+# which will be populated with scss files
+output_dir = "./"
+
+# folders in which stylance cli will look for css module files.
+# defaults to ["./src/"] (which I am using currently)
+# folders = ["./src/", "./style/"]
+
+
+# files ending with these extensions will be considered to be
+# css modules by stylance cli and will be included in the output bundle
+# defaults to [".module.scss", ".module.css"]
+extensions = [".module.scss", ".module.css"]

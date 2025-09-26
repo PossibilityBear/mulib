@@ -1,15 +1,14 @@
-.centered {
-	text-align: center;
-	margin: auto;
-	display: block;
-}
+// @use "color.scss";
 
+// Text defaults
 p, h1, h2, h3, h4, h5, h6 {
+	// color: $red;
+	// color: red;
 	font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 }
 
-
-input {
+// default icon buttons sizing 
+input[type=image] {
 	height: 1rlh;
 }
 
