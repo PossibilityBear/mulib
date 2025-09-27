@@ -1,9 +1,9 @@
-// @use "color.scss";
+// Paths are relative to (cargo root dir)/stylance
+@use "../src/styles/color.scss" as colors;
 
 // Text defaults
 p, h1, h2, h3, h4, h5, h6 {
-	// color: $red;
-	// color: red;
+	color: colors.$Light;
 	font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 }
 

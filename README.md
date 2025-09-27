@@ -17,8 +17,22 @@ items from the src folder
 the cargo.toml is then confingured for cargo leptos to look for styles in the
 ./stylance/_index.scss file created from running the stylance CLI tool. 
 
-from here cargo leptos watches for changes and will put the processes scss 
+from here dart sass (either from cargo leptos or fish watch script) watches for changes and will put the processed scss 
 file into ./target/site/package/
+
+## @use imports in .scss
+To @use within .scss you the relative paths are rooted from the 
+```
+<cargo root dir>/stylance 
+```
+so you will need a relative path starting with 
+```
+../src/\<your file within source\>
+```
+
+A side note here is that currently changes to these 'library' scss 
+files aren't caught by dart watch so to trigger dart to process just save the file you are using the @use in.
+
 
 # .Env
 There is a .env file at the project root which points sqlx to the 
