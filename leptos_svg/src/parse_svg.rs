@@ -1,7 +1,7 @@
 use std::{fmt::Display, fs, str::SplitWhitespace};
 
 use syn::{
-    parse::{Parse, ParseStream}, parse_macro_input, token::{At, Paren}, Attribute, Expr, ExprLit, Lit::Str, Token
+    parse::{Parse, ParseStream}, parse_macro_input, token::{At, Match, Paren}, Attribute, Expr, ExprLit, Lit::Str, Token
 };
 
 
@@ -29,7 +29,7 @@ impl SvgElement {
         );
         for attr in element.attributes.iter() {
             res.push_str(
-                &format!("\n{}{}", spaces(depth), attr)
+                &format!("\n  {}{}", spaces(depth), attr)
             );
         }
         if element.bodyless {
@@ -60,22 +60,31 @@ impl Display for SvgElement {
 }
 
 #[derive(Debug, Clone)]
-pub enum SvgAttribute {
-    Version(String),
-    ViewBox(String),
+pub struct SvgAttribute{
+    key: String,
+    value: String,
 }
 
 impl Display for SvgAttribute {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            SvgAttribute::Version(s) => write!(f, "\"Version\": \"{}\"", s),
-            SvgAttribute::ViewBox(s) => write!(f, "\"ViewBox\": \"{}\"", s),
-        }
+        write!(f, "{}=\"{}\"", self.key, self.value)
     }
 }
 
-const ATTR_VERSION: &str = "version";
-const ATTR_VEIWBOX: &str = "viewBox";
+//Blacklist of attributes that will break things
+//if they are not scrubbed, primarily for sizing in css
+pub fn is_banned_attribute(key: &str) -> bool{
+    // SVG files are technically XML which can be case sensitive 
+    // for attribute names, while we are stuffing this in HTML
+    // where it is not it's important for the names here 
+    // to match the case expected in XML definitions
+    let ban_list: Vec<&str> = vec![
+        "height",
+        "width",
+    ];
+
+    return ban_list.contains(&key);
+}
 
 // the path to the svg file
 #[derive(Debug)]
@@ -290,22 +299,15 @@ fn pop_attributes(contents: &mut String) -> Vec<SvgAttribute> {
                         cur_comp = AttrComp::CloesQt
                     },
                     c => {
-                        cur_comp = AttrComp::Value(String::new())
+                        cur_comp = AttrComp::Value(c.to_string())
                     }
                 }
             },
             AttrComp::Value(mut s) => {
                 match c {
                     QT => {
-                        // end of attribute 
-                        let attr = match cur_key.as_str().to_lowercase().as_str() {
-                            "version" => Some(SvgAttribute::Version(s)),
-                            "viewbox" => Some(SvgAttribute::ViewBox(s)),
-                            _ => None
-                        };
-
-                        if let Some(a) = attr {
-                            attrs.push(a);
+                        if !is_banned_attribute(&cur_key) {
+                            attrs.push(SvgAttribute { key: cur_key.clone(), value: s })
                         }
                         
                         cur_comp = AttrComp::CloesQt
