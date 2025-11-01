@@ -1,7 +1,9 @@
-use std::{fmt::Display, fs, str::SplitWhitespace};
+use std::{fmt::Display, fs};
 
+use quote::ToTokens;
+use quote::quote;
 use syn::{
-    parse::{Parse, ParseStream}, parse_macro_input, token::{At, Match, Paren}, Attribute, Expr, ExprLit, Lit::Str, Token
+    parse::{Parse, ParseStream}, ExprLit, Lit::Str 
 };
 
 
@@ -18,8 +20,9 @@ fn spaces(x: u32) -> String {
     for _ in 0..x {
         spaces.push(' ');
     } ;
-    return spaces
+    spaces
 }
+
 impl SvgElement {
     const NUM_SPACES: u32 = 2;
     fn to_string(element: &SvgElement, depth: u32) -> String {
@@ -39,7 +42,7 @@ impl SvgElement {
 
             for child in element.children.iter() {
                 res.push_str(
-                    &Self::to_string(&child, depth + Self::NUM_SPACES)
+                    &Self::to_string(child, depth + Self::NUM_SPACES)
                 );
             }
 
@@ -48,7 +51,11 @@ impl SvgElement {
             );
         }
         res.push('\n');
-        return res;
+        res
+    }
+
+    pub fn add_attribute(&mut self, attr: SvgAttribute) {
+        self.attributes.push(attr);
     }
 }
 
@@ -59,18 +66,62 @@ impl Display for SvgElement {
     }
 }
 
+impl ToTokens for SvgElement {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        let tag = &self.tag;
+        let attributes = &self.attributes;
+        let children = &self.children;
+
+        if self.bodyless {
+            let expanded = quote!{
+                <#tag #(#attributes)*//>
+            };
+            tokens.extend(expanded);
+        } else {
+            let expanded = quote!{
+                <#tag #(#attributes)*>
+                    #(#children)*
+                </#tag>
+            };
+            tokens.extend(expanded);
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct SvgAttribute{
-    key: String,
-    value: String,
+    pub(crate) key: String,
+    pub(crate) value: String,
+    pub(crate) quote_value: bool,
 }
 
 impl Display for SvgAttribute {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}=\"{}\"", self.key, self.value)
+        if self.quote_value {
+            write!(f, "{}=\"{}\"", self.key, self.value)
+        } else {
+            write!(f, "{}={}", self.key, self.value)
+        }
     }
 }
 
+impl ToTokens for SvgAttribute {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        let key = &self.key;
+        let value = &self.value;
+        if self.quote_value {
+            let expanded = quote!{
+                #key="#value"
+            };
+            tokens.extend(expanded);
+        } else {
+            let expanded = quote!{
+                #key=#value
+            };
+            tokens.extend(expanded);
+        }
+    }
+}
 //Blacklist of attributes that will break things
 //if they are not scrubbed, primarily for sizing in css
 pub fn is_banned_attribute(key: &str) -> bool{
@@ -83,7 +134,7 @@ pub fn is_banned_attribute(key: &str) -> bool{
         "width",
     ];
 
-    return ban_list.contains(&key);
+    ban_list.contains(&key)
 }
 
 // the path to the svg file
@@ -91,7 +142,7 @@ pub fn is_banned_attribute(key: &str) -> bool{
 pub struct FilePath(pub String);
 impl Display for FilePath {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self)
+        write!(f, "{}", self.0)
     }
 }
 
@@ -104,17 +155,6 @@ impl Parse for FilePath {
         };
 
         Ok(Self(path))
-    }
-}
-
-
-// a list of css classes to apply to the svg
-#[derive(Debug)]
-pub struct Class(Expr);
-impl Parse for Class{
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let _ : Token![,] = input.parse()?;
-        input.parse::<Expr>().map(Self)
     }
 }
 
@@ -154,11 +194,7 @@ const BODYLESS_TAG_CLOSE_DELIM: &str = "/>";
 /// returns the matched pattern and the index matched at or None if no matches
 fn first_of(contents: &str, patterns: Vec<&str>) -> Option<(String, usize)> {
     patterns.iter().filter_map(|pat| {
-            if let Some(i) = contents.find(pat) {
-                Some(((*pat).to_owned(), i))
-            } else {
-                None
-            } 
+           contents.find(pat).map(|i| ((*pat).to_owned(), i))
         })
         .min_by(|(_, index_a), (_, index_b)| {
             index_a.cmp(index_b)
@@ -171,23 +207,21 @@ fn find_whitespace(contents: &str) -> Option<usize> {
             return Some(i)
         }
     }
-    return None
+    None
 }
 
 fn first_of_or_whitespace(contents: &str, patterns: Vec<&str>) -> Option<(String, usize)> {
     let whitespace_index = find_whitespace(contents);
     if let Some((first_pat, pat_index)) = first_of(contents, patterns) {
-        if let Some(whitespace_index) = whitespace_index {
-            if (whitespace_index <= pat_index) {
-                return Some(("".to_string(), whitespace_index));
-            } 
+        if let Some(whitespace_index) = whitespace_index && whitespace_index <= pat_index {
+            return Some(("".to_string(), whitespace_index));
         }
         return Some((first_pat, pat_index));
     } 
     if let Some(whitespace_index) = whitespace_index {
         return Some(("".to_string(), whitespace_index));
     }
-    return None;
+    None
 }
 
 
@@ -199,7 +233,7 @@ fn pop_tag_name(contents: &mut String) -> String {
 
     let name = (&contents[..name_end]).to_owned();
     *contents = (&contents[name_end..]).to_owned();
-    return name
+    name
 }
 
 /// helper fuction to peek the name of the next tag
@@ -218,7 +252,7 @@ fn peek_tag_name(contents: &String) -> String {
     };
 
     let name = (contents[end_open_delim..name_end]).to_owned();
-    return name
+    name
 }
 
 
@@ -235,8 +269,6 @@ fn pop_attributes(contents: &mut String) -> Vec<SvgAttribute> {
 
     // split the attributes by whitespace to parse individualy
     let content_attrs = (&contents[..attr_end_i]).trim();
-    let mut attrs = Vec::<String>::new();
-    let mut first: usize = 0;
 
     enum AttrComp {
         Key(String), 
@@ -256,7 +288,7 @@ fn pop_attributes(contents: &mut String) -> Vec<SvgAttribute> {
 
     let mut attrs: Vec<SvgAttribute> = Vec::new();
 
-    for (i, c) in content_attrs.chars().enumerate() {
+    for (_i, c) in content_attrs.chars().enumerate() {
         // print!("{}", c);
         match cur_comp {
             AttrComp::Key(ref s) => {
@@ -288,7 +320,7 @@ fn pop_attributes(contents: &mut String) -> Vec<SvgAttribute> {
                     QT=> {
                         cur_comp = AttrComp::OpenQt
                     },
-                    c => {
+                    _c => {
                         panic!("Unexpected character when parsing SVG attrs, expected open quote")
                     }                    
                 }
@@ -307,7 +339,7 @@ fn pop_attributes(contents: &mut String) -> Vec<SvgAttribute> {
                 match c {
                     QT => {
                         if !is_banned_attribute(&cur_key) {
-                            attrs.push(SvgAttribute { key: cur_key.clone(), value: s })
+                            attrs.push(SvgAttribute { key: cur_key.clone(), value: s , quote_value: true})
                         }
                         
                         cur_comp = AttrComp::CloesQt
@@ -329,7 +361,7 @@ fn pop_attributes(contents: &mut String) -> Vec<SvgAttribute> {
     // remove the attributes from contents
     *contents = (&contents[attr_end_i..]).to_owned();
 
-    return attrs;
+    attrs
 }
 
 
@@ -374,7 +406,7 @@ fn parse_elements(contents:&mut String, parent_tag: &str) -> Vec<SvgElement> {
 
     // iterate throught the string file contents for siblings,
     // each iteration potentially recursing to collect children
-    while let Some((open_pat, open_i)) 
+    while let Some((open_pat, _open_i)) 
         = first_of(contents.as_str(), vec![
             CLOSE_TAG_OPEN_DELIM,
             OPEN_TAG_OPEN_DELIM, 

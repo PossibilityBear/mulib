@@ -1,4 +1,4 @@
-use std::{fmt::Display, fs::{self, File}, path::PathBuf};
+use std::fmt::Display;
 
 use proc_macro::TokenStream;
 
@@ -8,15 +8,17 @@ use parse_svg::*;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{quote, ToTokens};
 use syn::{
-    parse::{Parse, ParseStream}, parse_macro_input, token::{At, Paren}, Attribute, Expr, ExprLit, Lit::Str, Token
+    parse::{Parse, ParseStream}, parse_macro_input, Expr, Token
 };
 
 
 #[proc_macro]
+// syntax like svg!("path/to/your.svg", css_class1, css_class2, ...)
 pub fn svg(item: TokenStream) -> TokenStream {
     let svg =  parse_macro_input!(item as Svg);
-    todo!()
+    quote!{#svg}.into()
 }
+
 struct Svg {
     // the path to the svg file
     path: FilePath,
@@ -25,6 +27,17 @@ struct Svg {
     // css classes to apply to the svg
     css_classes: Vec<Class>
 }
+
+// a list of css classes to apply to the svg
+#[derive(Debug)]
+struct Class(Expr);
+impl Parse for Class{
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let _ : Token![,] = input.parse()?;
+        input.parse::<Expr>().map(Self)
+    }
+}
+
 
 impl Display for Svg {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -44,6 +57,37 @@ impl Parse for Svg {
     }
 }
 
+impl ToTokens for Svg {
+    fn to_tokens(&self, tokens: &mut TokenStream2) {
+        let mut svg = self.svg_element.clone();
+
+        // quote the classes provided together such that a vec
+        // is constructed and joins the real values of the class with space delim
+        // expressions together into a single string of classes
+        // e.g. 
+        //class=vec![controls::play_svg, main_style::svg_button].join(" ")
+        let classes: Vec<&Expr> = self.css_classes.iter().map(|c| {&c.0}).collect(); 
+        let class_value_string = quote!{
+            vec![#(#classes)*].join(" ")
+        }.to_string();
+
+        // add the new classes attribute to the parsed svg
+        svg.add_attribute(SvgAttribute {
+            key: "class".to_string(),
+            value: class_value_string,
+            quote_value: false
+        });
+
+
+        // wrap the svg in an anonymous fn and leptos view macro
+        let expaneded = quote! { || view!{
+            #svg
+        }};
+
+        tokens.extend(expaneded);
+    }
+}
+
 /// helper function to parse zero or more of the generic type T 
 /// from the provided ParseStream
 fn parse_zero_or_more<T: Parse>(input: ParseStream) -> Vec<T> {
@@ -57,21 +101,6 @@ fn parse_zero_or_more<T: Parse>(input: ParseStream) -> Vec<T> {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let svg = read_svg(&FilePath("../public/play.svg".to_string()));
-        println!("{}", svg);
-    }
-}
-
-
-
-// ideal syntax svg!("path/to/your.svg", css_class1, css_class2, ...)
 
     // potentially todo:
     // Create a function like proc macro that 
@@ -104,60 +133,3 @@ mod tests {
     //     </svg>
     // }};
     // let pause_svg = || {view!{}};
-
-// <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-// <svg
-//    height="500"
-//    width="500"
-//    version="1.1"
-//    id="Capa_1"
-//    viewBox="26.907 -0.841 177.88813 211.25875"
-//    preserveAspectRatio="none"
-//    sodipodi:docname="play.svg"
-//    inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
-//    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-//    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-//    xmlns="http://www.w3.org/2000/svg"
-//    xmlns:svg="http://www.w3.org/2000/svg"
-//    xmlns:bx="https://boxy-svg.com">
-//   <sodipodi:namedview
-//      id="namedview378"
-//      pagecolor="#505050"
-//      bordercolor="#eeeeee"
-//      borderopacity="1"
-//      inkscape:showpageshadow="0"
-//      inkscape:pageopacity="0"
-//      inkscape:pagecheckerboard="0"
-//      inkscape:deskcolor="#505050"
-//      showgrid="false"
-//      inkscape:zoom="1.05625"
-//      inkscape:cx="399.52663"
-//      inkscape:cy="248.04734"
-//      inkscape:window-width="1886"
-//      inkscape:window-height="1011"
-//      inkscape:window-x="0"
-//      inkscape:window-y="32"
-//      inkscape:window-maximized="1"
-//      inkscape:current-layer="Capa_1" />
-//   <defs
-//      id="defs369">
-//     <bx:export>
-//       <bx:file
-//          format="svg"
-//          path="PlayButton.svg"
-//          normalization="{&quot;removeBoxySVGMetadata&quot;:true}" />
-//     </bx:export>
-//   </defs>
-//   <g
-//      id="g375"
-//      transform="matrix(0.62344916,0,0,0.62655892,9.7609509,0)">
-//     <g
-//        id="g373">
-//       <path
-//          style="fill:#010002"
-//          d="M 27.50192,335.83075 V -1.3422521 L 312.83093,167.24425 Z"
-//          id="path371"
-//          sodipodi:nodetypes="cccc" />
-//     </g>
-//   </g>
-// </svg>
