@@ -27,6 +27,7 @@ leptos-use = {version = "0.16.2"}
 tower-http = "0.6.6"
 uuid = {version="1.18.1", features = ["v4", "std", "js"]}
 getrandom = { version = "0.3.3", features = ["wasm_js"] }
+leptos_svg = {path = "./leptos_svg"}
 [features]
 hydrate = [
     "leptos/hydrate",

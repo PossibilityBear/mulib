@@ -1,7 +1,5 @@
 use std::{fmt::Display, fs};
 
-use quote::ToTokens;
-use quote::quote;
 use syn::{
     parse::{Parse, ParseStream}, ExprLit, Lit::Str 
 };
@@ -61,30 +59,8 @@ impl SvgElement {
 
 impl Display for SvgElement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "SVG ELEMENT:\n {}", Self::to_string(self, 0))?;
+        writeln!(f, "{}", Self::to_string(self, 0))?;
         std::fmt::Result::Ok(())
-    }
-}
-
-impl ToTokens for SvgElement {
-    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-        let tag = &self.tag;
-        let attributes = &self.attributes;
-        let children = &self.children;
-
-        if self.bodyless {
-            let expanded = quote!{
-                <#tag #(#attributes)*//>
-            };
-            tokens.extend(expanded);
-        } else {
-            let expanded = quote!{
-                <#tag #(#attributes)*>
-                    #(#children)*
-                </#tag>
-            };
-            tokens.extend(expanded);
-        }
     }
 }
 
@@ -105,23 +81,6 @@ impl Display for SvgAttribute {
     }
 }
 
-impl ToTokens for SvgAttribute {
-    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-        let key = &self.key;
-        let value = &self.value;
-        if self.quote_value {
-            let expanded = quote!{
-                #key="#value"
-            };
-            tokens.extend(expanded);
-        } else {
-            let expanded = quote!{
-                #key=#value
-            };
-            tokens.extend(expanded);
-        }
-    }
-}
 //Blacklist of attributes that will break things
 //if they are not scrubbed, primarily for sizing in css
 pub fn is_banned_attribute(key: &str) -> bool{
@@ -132,6 +91,8 @@ pub fn is_banned_attribute(key: &str) -> bool{
     let ban_list: Vec<&str> = vec![
         "height",
         "width",
+        "id",
+        "style"
     ];
 
     ban_list.contains(&key)

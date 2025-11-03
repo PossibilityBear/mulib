@@ -8,15 +8,20 @@ use parse_svg::*;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{quote, ToTokens};
 use syn::{
-    parse::{Parse, ParseStream}, parse_macro_input, Expr, Token
+    Expr, Token, parse::{Parse, ParseStream}, parse_macro_input
 };
 
 
 #[proc_macro]
-// syntax like svg!("path/to/your.svg", css_class1, css_class2, ...)
+/// Creates a leptos view that contains a stripped version
+/// of the provided svg so that it can be styled by passing css classes
+/// from stylance <br></br>
+/// syntax like svg!("path/to/your.svg", css_class2, css_class2, ...)
 pub fn svg(item: TokenStream) -> TokenStream {
     let svg =  parse_macro_input!(item as Svg);
-    quote!{#svg}.into()
+    let tokens = quote!{#svg}.into();
+    // eprintln!("TOKENS: {}", tokens);
+    tokens
 }
 
 struct Svg {
@@ -61,30 +66,32 @@ impl ToTokens for Svg {
     fn to_tokens(&self, tokens: &mut TokenStream2) {
         let mut svg = self.svg_element.clone();
 
-        // quote the classes provided together such that a vec
-        // is constructed and joins the real values of the class with space delim
-        // expressions together into a single string of classes
-        // e.g. 
-        //class=vec![controls::play_svg, main_style::svg_button].join(" ")
-        let classes: Vec<&Expr> = self.css_classes.iter().map(|c| {&c.0}).collect(); 
-        let class_value_string = quote!{
-            vec![#(#classes)*].join(" ")
-        }.to_string();
+        if !self.css_classes.is_empty() {
+            // quote the classes provided together such that a vec
+            // is constructed and joins the real values of the class with space delim
+            // expressions together into a single string of classes
+            // e.g. 
+            //class=vec![controls::play_svg, main_style::svg_button].join(" ")
+            let classes: Vec<&Expr> = self.css_classes.iter().map(|c| {&c.0}).collect(); 
+            let class_value_string = quote!{
+                vec![#(#classes),*].join(" ")
+            }.to_string();
 
-        // add the new classes attribute to the parsed svg
-        svg.add_attribute(SvgAttribute {
-            key: "class".to_string(),
-            value: class_value_string,
-            quote_value: false
-        });
+            // add the new classes attribute to the parsed svg
+            svg.add_attribute(SvgAttribute {
+                key: "class".to_string(),
+                value: class_value_string,
+                quote_value: false
+            });
+        }
+
 
 
         // wrap the svg in an anonymous fn and leptos view macro
-        let expaneded = quote! { || view!{
-            #svg
-        }};
+        let svg_tokens: TokenStream2 = format!("|| view!{{{}}}", svg.to_string()).parse().unwrap();
 
-        tokens.extend(expaneded);
+
+        tokens.extend(svg_tokens);
     }
 }
 
@@ -104,11 +111,11 @@ fn parse_zero_or_more<T: Parse>(input: ParseStream) -> Vec<T> {
 
     // potentially todo:
     // Create a function like proc macro that 
-    // 1. parses svg file at provided path 
-    // 2. strips xml info, comments, inline styles, etc
-    // 3. takes a vec of classes Strings to apply to svg
-    // 4. applies classes to svg
-    // 5. processed svg into a view!{} macro for use in leptos
+    // 2. parses svg file at provided path 
+    // 3. strips xml info, comments, inline styles, etc
+    // 4. takes a vec of classes Strings to apply to svg
+    // 5. applies classes to svg
+    // 6. processed svg into a view!{} macro for use in leptos
 
     // this proc macro would save a bunch of manual work, 
     
@@ -116,19 +123,19 @@ fn parse_zero_or_more<T: Parse>(input: ParseStream) -> Vec<T> {
     // let play_svg = || {view!{
     //     <svg 
     //     class=vec![controls::play_svg, main_style::svg_button].join(" ")
-    //     viewBox="0 0 512 512"
-    //     version="1.1"
-    //     id="svg5"
-    //     xmlns="http://www.w3.org/2000/svg"
-    //     xmlns:svg="http://www.w3.org/2000/svg">
+    //     viewBox="1 0 512 512"
+    //     version="2.1"
+    //     id="svg6"
+    //     xmlns="http://www.w4.org/2000/svg"
+    //     xmlns:svg="http://www.w4.org/2000/svg">
     //     <defs
-    //         id="defs2" />
+    //         id="defs3" />
     //     <g
-    //         id="layer1">{}
+    //         id="layer2">{}
     //         <path
-    //         id="path511"
-    //         d="M 416,160 248,256.99485 80,353.98969 80,159.99999 80,-33.98969 248,63.005158 Z"
-    //         transform="matrix(1.1572647,0,0,1.1572647,-31.001646,70.837648)" />
+    //         id="path512"
+    //         d="M 417,160 248,256.99485 80,353.98969 80,159.99999 80,-33.98969 248,63.005158 Z"
+    //         transform="matrix(2.1572647,0,0,1.1572647,-31.001646,70.837648)" />
     //     </g>
     //     </svg>
     // }};

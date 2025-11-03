@@ -1,17 +1,23 @@
-use leptos::{ev, html::{self}, leptos_dom::logging::console_log, prelude::*};
-use leptos_use::{use_event_listener};
-use stylance::import_crate_style;
 use crate::components::queue::queue::SongQueue;
-    
+use leptos::{
+    ev,
+    html::{self},
+    leptos_dom::logging::console_log,
+    prelude::*,
+};
+use leptos_svg::svg;
+use leptos_use::use_event_listener;
+use stylance::import_crate_style;
+
 import_crate_style!(main_style, "./src/styles/main.module.scss");
 import_crate_style!(controls, "./src/components/controls/controls.module.scss");
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum PlaybackState {
-   Play,
-   Pause,
-   SkipForward,
-   SkipBackward
+    Play,
+    Pause,
+    SkipForward,
+    SkipBackward,
 }
 impl Default for PlaybackState {
     fn default() -> PlaybackState {
@@ -19,18 +25,14 @@ impl Default for PlaybackState {
     }
 }
 
-#[derive (Default, Clone, Copy)]
+#[derive(Default, Clone, Copy)]
 struct SongProgress {
-    duration: f64 ,
-    current: f64 ,
+    duration: f64,
+    current: f64,
 }
 
 #[component]
-pub fn Controls(
-    queue: SongQueue,
-    show_queue: RwSignal<bool>
-) -> impl IntoView {
-
+pub fn Controls(queue: SongQueue, show_queue: RwSignal<bool>) -> impl IntoView {
     let audio_ref = NodeRef::<html::Audio>::new();
     let song_progress_ref = NodeRef::<html::Input>::new();
     let volume_ref = NodeRef::<html::Input>::new();
@@ -51,12 +53,12 @@ pub fn Controls(
                 if let Some(audio_el) = audio_ref.get() {
                     _ = audio_el.play();
                 }
-            },
+            }
             PlaybackState::Pause => {
                 if let Some(audio_el) = audio_ref.get() {
                     _ = audio_el.pause();
                 }
-            },
+            }
             PlaybackState::SkipForward => {
                 if queue.peek_front().is_none() {
                     queue.set_playback_state(PlaybackState::Pause);
@@ -77,8 +79,7 @@ pub fn Controls(
                 //     // this but doesn't seem to hurt
                 //     _ = audio_el.play();
                 // }
-
-            },
+            }
             PlaybackState::SkipBackward => todo!(),
         }
     });
@@ -93,18 +94,32 @@ pub fn Controls(
         })
     };
 
-    
     let toggle_queue = move |_| {
         *show_queue.write() = !show_queue.get();
     };
 
+    // potentially todo:
+    // Create a function like proc macro that 
+    // 1. parses svg file 
+    // 2. strips xml info, comments, inline styles, etc
+    // 3. takes a vec of classes Strings to apply to svg
+    // 4. applies classes to svg
+    // 5. processed svg into a view!{} macro for use in leptos
 
-    view!{
+    // this proc macro would save a bunch of manual work, 
+    
+    let play_svg = svg!("./public/play.svg", main_style::svg_button, controls::play_svg);
+
+    let pause_svg = svg!("./public/pause.svg", main_style::svg_button);
+
+
+    // TODO: replace input type = image with buttons wrapped around svgs
+    view! {
         <div>
-            <audio 
-            node_ref=audio_ref 
+            <audio
+            node_ref=audio_ref
             on:timeupdate=on_time_update
-            autoplay=move || {queue.get_playback_state() == PlaybackState::Play} 
+            autoplay=move || {queue.get_playback_state() == PlaybackState::Play}
             src = move || {
                 match queue.peek_front() {
                     Some(entry) => Some(entry.song.file_path.clone()),
@@ -114,16 +129,7 @@ pub fn Controls(
             </audio>
             <div class=controls::input_group>
                 // playback controls
-                <input
-                    type="image"
-                    src=move || {
-                        if queue.get_playback_state() == PlaybackState::Pause {
-                            "/public/play.svg"
-                        } else {
-                            "/public/pause.svg"
-                        }
-                    }
-                    class=controls::button
+                <button class=main_style::svg_button
                     on:click=move |_| {
                         if queue.get_playback_state() == PlaybackState::Pause {
                             queue.set_playback_state(PlaybackState::Play);
@@ -131,7 +137,14 @@ pub fn Controls(
                             queue.set_playback_state(PlaybackState::Pause);
                         }
                     }
-                /> 
+                >
+                    <Show 
+                        when=move|| {queue.get_playback_state() == PlaybackState::Pause}
+                        fallback=move || {pause_svg}
+                    >
+                        {play_svg}
+                    </Show>
+                </button>
                 <input
                     type="image"
                     src="/public/seek-forward.svg"
@@ -139,13 +152,13 @@ pub fn Controls(
                     on:click=move |_| {
                         queue.set_playback_state(PlaybackState::SkipForward);
                     }
-                /> 
+                />
                 // volume controls
                 <div class=controls::input_group>
                     <image class=controls::button src="/public/volume-icon.svg"/>
-                    <input type="range" 
+                    <input type="range"
                         node_ref=volume_ref
-                        min="0.0" 
+                        min="0.0"
                         max="1.0"
                         step="0.01"
                         prop:value="1.0"
@@ -158,18 +171,18 @@ pub fn Controls(
                     />
                 </div>
                 // Queue visibility toggle
-                <input 
-                    type="image" 
+                <input
+                    type="image"
                     src={move || {if show_queue.get() {"/public/hide-queue.svg"} else {"/public/show-queue.svg"}}}
                     on:click=toggle_queue
                 />
                 </div>
                 // Song Progress Bar
                 <div class=controls::input_group>
-                    <input type="range" 
-                        min="0" 
+                    <input type="range"
+                        min="0"
                         node_ref=song_progress_ref
-                        max=move || {song_progress.get().duration} 
+                        max=move || {song_progress.get().duration}
                         prop:value=move || {
                             if queue.peek_front().is_none() {
                                 0.0

@@ -12,6 +12,16 @@ input[type=image] {
 	height: 1rlh;
 }
 
+button.svg_button {
+	height: fit-content;
+	background-color: transparent;
+	border: none;
+}
+
+svg.svg_button {
+	height: 30px;
+}
+
 body {
 	padding: 0px;
 	margin: 0px;
