@@ -83,17 +83,23 @@ impl Display for SvgAttribute {
 
 //Blacklist of attributes that will break things
 //if they are not scrubbed, primarily for sizing in css
-pub fn is_banned_attribute(key: &str) -> bool{
+pub fn is_banned_attribute(tag_name: &str, key: &str) -> bool{
     // SVG files are technically XML which can be case sensitive 
     // for attribute names, while we are stuffing this in HTML
     // where it is not it's important for the names here 
     // to match the case expected in XML definitions
-    let ban_list: Vec<&str> = vec![
-        "height",
-        "width",
-        "id",
-        "style"
-    ];
+    let ban_list: Vec<&str>;
+
+    if tag_name == "svg" {
+        ban_list = vec![
+            "height",
+            "width",
+            "id",
+            "style"
+        ];
+    } else {
+        ban_list = vec![];
+    }
 
     ban_list.contains(&key)
 }
@@ -126,7 +132,7 @@ pub fn read_svg(path: &FilePath) -> SvgElement{
         Ok(c) => c,
         Err(e) => {
             println!("{:?}", e);
-            panic!("error parsing svg for svg macro");
+            panic!("error parsing svg for svg macro, Check your file path");
         }
         
 
@@ -220,7 +226,7 @@ fn peek_tag_name(contents: &String) -> String {
 
 
 /// helper function to pop the next set of attributes
-fn pop_attributes(contents: &mut String) -> Vec<SvgAttribute> {
+fn pop_attributes(tag_name: &str, contents: &mut String) -> Vec<SvgAttribute> {
     // get end index of attributes
     let (_, attr_end_i) = first_of(&contents, vec![
             TAG_CLOSE_DELIM,
@@ -299,7 +305,7 @@ fn pop_attributes(contents: &mut String) -> Vec<SvgAttribute> {
             AttrComp::Value(mut s) => {
                 match c {
                     QT => {
-                        if !is_banned_attribute(&cur_key) {
+                        if !is_banned_attribute(tag_name, &cur_key) {
                             attrs.push(SvgAttribute { key: cur_key.clone(), value: s , quote_value: true})
                         }
                         
@@ -406,7 +412,7 @@ fn parse_elements(contents:&mut String, parent_tag: &str) -> Vec<SvgElement> {
                 // get name
                 tag_name = pop_tag_name(contents);
                 // get attributes
-                attrs = pop_attributes(contents);
+                attrs = pop_attributes(&tag_name, contents);
                 // get all children once open tag closes
             },
             TAG_CLOSE_DELIM => {

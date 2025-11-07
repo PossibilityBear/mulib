@@ -15,8 +15,14 @@ use syn::{
 #[proc_macro]
 /// Creates a leptos view that contains a stripped version
 /// of the provided svg so that it can be styled by passing css classes
-/// from stylance <br></br>
+/// from stylance 
+/// 
 /// syntax like svg!("path/to/your.svg", css_class2, css_class2, ...)
+/// 
+/// * `file_path` - The path to the svg file 
+/// * `string_css_class1` - any number of comma separated string expressions
+/// * `string_css_class2` - any number of comma separated string expressions
+/// * `string_css_class3` - any number of comma separated string expressions
 pub fn svg(item: TokenStream) -> TokenStream {
     let svg =  parse_macro_input!(item as Svg);
     let tokens = quote!{#svg}.into();

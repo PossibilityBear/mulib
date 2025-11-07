@@ -112,24 +112,33 @@ pub fn Controls(queue: SongQueue, show_queue: RwSignal<bool>) -> impl IntoView {
 
     let pause_svg = svg!("./public/pause.svg", main_style::svg_button);
 
+    let seek_forward_svg =  svg!("./public/seek-forward.svg", main_style::svg_button);
+
+    let volume_svg = svg!("./public/volume-icon.svg", main_style::svg_button);
+
+    let hide_queue_svg  = svg!("./public/hide-queue.svg", main_style::svg_button);
+
+    let show_queue_svg = svg!("./public/show-queue.svg", main_style::svg_button);
 
     // TODO: replace input type = image with buttons wrapped around svgs
     view! {
         <div>
             <audio
-            node_ref=audio_ref
-            on:timeupdate=on_time_update
-            autoplay=move || {queue.get_playback_state() == PlaybackState::Play}
-            src = move || {
-                match queue.peek_front() {
-                    Some(entry) => Some(entry.song.file_path.clone()),
-                    None => None
+                node_ref=audio_ref
+                on:timeupdate=on_time_update
+                autoplay=move || {queue.get_playback_state() == PlaybackState::Play}
+                src = move || {
+                    match queue.peek_front() {
+                        Some(entry) => Some(entry.song.file_path.clone()),
+                        None => None
+                    }
                 }
-            }>
+            >
             </audio>
             <div class=controls::input_group>
                 // playback controls
                 <button class=main_style::svg_button
+                    // Pause / Play
                     on:click=move |_| {
                         if queue.get_playback_state() == PlaybackState::Pause {
                             queue.set_playback_state(PlaybackState::Play);
@@ -145,17 +154,17 @@ pub fn Controls(queue: SongQueue, show_queue: RwSignal<bool>) -> impl IntoView {
                         {play_svg}
                     </Show>
                 </button>
-                <input
-                    type="image"
-                    src="/public/seek-forward.svg"
-                    class=controls::button
+
+                <button class=main_style::svg_button
+                    // skip forward
                     on:click=move |_| {
                         queue.set_playback_state(PlaybackState::SkipForward);
                     }
-                />
+                > { seek_forward_svg } </button>
+
                 // volume controls
                 <div class=controls::input_group>
-                    <image class=controls::button src="/public/volume-icon.svg"/>
+                    {volume_svg}
                     <input type="range"
                         node_ref=volume_ref
                         min="0.0"
@@ -171,53 +180,56 @@ pub fn Controls(queue: SongQueue, show_queue: RwSignal<bool>) -> impl IntoView {
                     />
                 </div>
                 // Queue visibility toggle
-                <input
-                    type="image"
-                    src={move || {if show_queue.get() {"/public/hide-queue.svg"} else {"/public/show-queue.svg"}}}
+                <button class=main_style::svg_button
                     on:click=toggle_queue
-                />
-                </div>
-                // Song Progress Bar
-                <div class=controls::input_group>
-                    <input type="range"
-                        min="0"
-                        node_ref=song_progress_ref
-                        max=move || {song_progress.get().duration}
-                        prop:value=move || {
-                            if queue.peek_front().is_none() {
-                                0.0
-                            } else {
-                                song_progress.get().current
-                            }
-                        }
-                        on:change=move |_event| {
-                            if let (Some(range), Some(audio)) = (song_progress_ref.get(), audio_ref.get()) {
-                                audio.set_current_time(range.value().parse::<f64>().expect("to convert range value to float"));
-                            }
-                            // todo!()
-                        }
-                    />
-                    <p class=controls::time_stamp> {move || {
-                        if queue.peek_front().is_some() && queue.get_playback_state() == PlaybackState::Play {
-                            let mut duration = song_progress.get().duration;
-                            if duration.is_nan() {
-                                duration = 0.0;
-                            }
-                            let current = song_progress.get().current;
-
-                            let current_minutes = (current / 60.0).floor();
-                            let current_seconds = current % 60.0;
-
-                            let duration_minutes = (duration / 60.0).floor();
-                            let duration_seconds = duration % 60.0;
-
-                            format!("{current_minutes:01.0}:{current_seconds:02.0} / {duration_minutes:01.0}:{duration_seconds:02.0}")
-                        } else {
-                            format!("0:00 / 0:00")
-                        }
-                    }}</p>
-                </div>
+                >
+                    <Show
+                        when= move || {show_queue.get()}    
+                        fallback=show_queue_svg
+                    >
+                        {hide_queue_svg}
+                    </Show>
+                </button>
+            </div>
+            // Song Progress Bar
             <div class=controls::input_group>
+                <input type="range"
+                    min="0"
+                    node_ref=song_progress_ref
+                    max=move || {song_progress.get().duration}
+                    prop:value=move || {
+                        if queue.peek_front().is_none() {
+                            0.0
+                        } else {
+                            song_progress.get().current
+                        }
+                    }
+                    on:change=move |_event| {
+                        if let (Some(range), Some(audio)) = (song_progress_ref.get(), audio_ref.get()) {
+                            audio.set_current_time(range.value().parse::<f64>().expect("to convert range value to float"));
+                        }
+                        // todo!()
+                    }
+                />
+                <p class=controls::time_stamp> {move || {
+                    if queue.peek_front().is_some()  {
+                        let mut duration = song_progress.get().duration;
+                        if duration.is_nan() {
+                            duration = 0.0;
+                        }
+                        let current = song_progress.get().current;
+
+                        let current_minutes = (current / 60.0).floor();
+                        let current_seconds = current % 60.0;
+
+                        let duration_minutes = (duration / 60.0).floor();
+                        let duration_seconds = duration % 60.0;
+
+                        format!("{current_minutes:01.0}:{current_seconds:02.0} / {duration_minutes:01.0}:{duration_seconds:02.0}")
+                    } else {
+                        format!("0:00 / 0:00")
+                    }
+                }}</p>
             </div>
         </div>
     }

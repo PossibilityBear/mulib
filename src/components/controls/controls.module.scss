@@ -1,18 +1,9 @@
 // Paths are relative to (cargo root dir)/stylance
 @use "../src/styles/color.scss" as colors;
 
-input.button {
-  max-height: 1rlh;
-  margin: .25rlh;
-}
-
-img.button {
-  max-height: 1rlh;
-  margin: .25rlh;
-}
-
 p.time_stamp {
   justify-self: center;
+  width: 150px;
   margin: 0px;
 }
 
@@ -23,6 +14,6 @@ div.input_group {
   align-items: center;
 }
 
-svg.play_svg {
-  fill: colors.$AccentStrong;
+svg.play_svg, svg.play_svg path, svg.play_svg rect {
+  fill: colors.$AccentStrong !important;
 }
