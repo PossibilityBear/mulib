@@ -2,7 +2,7 @@ use leptos::{prelude::{ServerFnError, *}};
 use stylance::import_crate_style;
 use crate::{components::song::song::{Song, SongAction}, models::{album::Album, artist::Artist, playlist::Playlist, song::Song}};
     
-/// Defines the sorce of songs for the song list
+/// Defines the source of songs for the song list
 #[derive(Clone, PartialEq)]
 pub enum SongListSource {
     Album(Album),
@@ -71,16 +71,6 @@ pub fn SongList (
             song_source_helper(source)
         }
     );
-
-    // let (list_id, _) = signal(list_id);
-
-    // let songs_res = Resource::new(
-    //     move || {
-    //         list_id.get()
-    //     },
-    //     |id| {get_all_songs(id)}
-    // );
-
 
     view! {
         <div class=style::songs>

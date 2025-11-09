@@ -1,0 +1,44 @@
+// Paths are relative to (cargo root dir)/stylance
+@use "../src/styles/color.scss" as colors;
+
+
+div.LibContainer {
+    display:flex;
+    background-color: colors.$Dark;
+    flex-direction: column;
+    height: 100%;
+    border-radius: 1dvh;
+    row-gap: 20px;
+}
+
+div.HeaderRow {
+    display:flex;
+    align-items: center;
+    justify-content: center;
+    column-gap: 10%;
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+
+button.Tab {
+    background-color: colors.$Mid;
+    border-radius: 20px;
+    padding: 8px;
+    color: colors.$AccentLight;
+    border: none;
+    font-size: 20px;
+    font-weight: 500;
+}
+
+button.Tab:hover {
+    background-color: colors.$MidLight;
+}
+
+button.TabSelected {
+    color: colors.$AccentStrong;
+}
+
+h1.Title {
+    color: colors.$AccentLight
+}

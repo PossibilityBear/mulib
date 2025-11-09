@@ -4,3 +4,4 @@ pub mod song_list;
 pub mod controls;
 pub mod queue;
 pub mod song;
+pub mod library;

@@ -2,6 +2,7 @@
 
 use leptos::prelude::*;
 use stylance::import_crate_style;
+use crate::components::library::library::LibrarySidebar;
 use crate::components::song_list::song_list::{SongList, SongListSource};
 use crate::components::controls::controls::Controls;
 use crate::components::queue::queue::{Queue, SongQueueContext};
@@ -20,6 +21,9 @@ pub fn HomePage() -> impl IntoView {
     view! {
         <div class=home_page::container>
             <div class=home_page::main_view>
+                <div class=home_page::Library>
+                    <LibrarySidebar/>
+                </div>
                 <div class=home_page::song_list>
                     <SongList source=list_source/>
                 </div>
