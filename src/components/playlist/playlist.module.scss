@@ -3,7 +3,6 @@
 @use "../src/styles/sizes.scss" as sizes;
 
 div.PlaylistCard {
-    width: 100%;
     background-color: colors.$Dark;
     display: flex;
     column-gap: 10px;
