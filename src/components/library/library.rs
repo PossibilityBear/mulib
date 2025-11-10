@@ -1,8 +1,10 @@
 use leptos::prelude::*;
 use stylance::import_crate_style;
 use crate::components::song_list::song_list::SongListSource;
+use crate::models::artist::Artist;
 use crate::models::playlist::Playlist;
 use crate::components::playlist::playlist::PlaylistCard;
+use crate::components::artist::artist::ArtistCard;
 
 import_crate_style!(library, "./src/components/library/library.module.scss");
 import_crate_style!(main, "./src/styles/main.module.scss");
@@ -39,7 +41,10 @@ pub fn TabSelector(tab: Tabs, tab_selection: RwSignal<Tabs>) -> impl IntoView {
     }
 }
 
-#[server]
+#[server(
+    prefix = "/api",
+    endpoint = "get_playlists"
+)]
 pub async fn get_playlists() -> Result<Vec<Playlist>, ServerFnError> {
     use crate::app_state::AppState;
     use crate::database::commands::playlists::get_playlists_info;
@@ -51,21 +56,27 @@ pub async fn get_playlists() -> Result<Vec<Playlist>, ServerFnError> {
     Ok(playlists)
 }
 
+#[server(
+    prefix = "/api",
+    endpoint = "get_artists"
+)]
+pub async fn get_artists() -> Result<Vec<Artist>, ServerFnError> {
+    use crate::app_state::AppState;
+    use crate::database::commands::artists::get_all_artists;
+
+    let state = use_context::<AppState>().expect("To have Found App State");
+
+    let playlists = get_all_artists(&state.db).await?;
+
+    Ok(playlists)
+}
+
 
 #[component]
 pub fn LibrarySidebar() -> impl IntoView {
     let tab_selection = RwSignal::new(Tabs::Playlists);
 
     let list_source = use_context::<RwSignal<SongListSource>>().expect("To have found song list source context");
-
-    let playlists = Resource::new(
-        move || {
-            // source.get()
-        },
-        |_| {
-            get_playlists()
-        }
-    );
 
     view!{
         <div class=library::LibContainer>
@@ -82,34 +93,111 @@ pub fn LibrarySidebar() -> impl IntoView {
                 <TabSelector tab=Tabs::Albums tab_selection=tab_selection/>
                 <TabSelector tab=Tabs::Playlists tab_selection=tab_selection/>
             </div>
-            <Suspense
-                fallback=move || view!{<p> {"loading..."}</p>}
-            >
-                <For 
-                    each=move || {
-                        if let Some(Ok(playlists)) = playlists.get() {
-                            playlists.into_iter().map(|playlist| {
-                                Some(playlist)
-                            })
-                            .collect::<Vec<Option<Playlist>>>()
-                        } else {
-                            Vec::<Option<Playlist>>::new()
-                        }
+            <div class=library::ListContainer> 
+                <Show when=move || {tab_selection.get() == Tabs::Playlists}
+                    fallback=|| view!{}
+                >
+                    <PlaylistList/>
+                </Show>
+                <Show when=move || {tab_selection.get() == Tabs::Artists}
+                    fallback=|| view!{}
+                >
+                    <ArtistList/>
+                </Show>
+            </div>
+        </div>
+    }
+}
+
+
+#[component]
+pub fn PlaylistList() -> impl IntoView {
+    let playlists = Resource::new(
+        move || {
+            // source.get()
+        },
+        |_| {
+            get_playlists()
+        }
+    );
+
+    view!{
+        <div>
+        <Suspense
+            fallback=move || view!{<p> {"loading..."}</p>}
+        >
+            <For 
+                each=move || {
+                    if let Some(Ok(playlists)) = playlists.get() {
+                        playlists.into_iter().map(|playlist| {
+                            Some(playlist)
+                        })
+                        .collect::<Vec<Option<Playlist>>>()
+                    } else {
+                        Vec::<Option<Playlist>>::new()
                     }
-                    key=|playlist| {
-                        if let Some(p) = playlist {
-                            p.id
-                        } else {
-                            0
-                        }
+                }
+                key=|playlist| {
+                    if let Some(p) = playlist {
+                        p.id
+                    } else {
+                        0
                     }
-                    children=move |playlist| {
-                        view!{
-                            <PlaylistCard list=playlist/>
-                        }
+                }
+                children=move |playlist| {
+                    view!{
+                        <PlaylistCard list=playlist/>
                     }
-                />
-            </Suspense>
+                }
+            />
+        </Suspense>
+        </div>
+    }
+}
+
+#[component]
+pub fn ArtistList() -> impl IntoView {
+
+    let artists = Resource::new(
+        move || {
+            // source.get()
+        },
+        |_| {
+            get_artists()
+        }
+    );
+
+
+    view!{
+        <div>
+        <Suspense
+            fallback=move || view!{<p> {"loading..."}</p>}
+        >
+            <For 
+                each=move || {
+                    if let Some(Ok(artists)) = artists.get() {
+                        artists.into_iter().map(|artist| {
+                            Some(artist)
+                        })
+                        .collect::<Vec<Option<Artist>>>()
+                    } else {
+                        Vec::<Option<Artist>>::new()
+                    }
+                }
+                key=|artist| {
+                    if let Some(p) = artist {
+                        p.id
+                    } else {
+                        0
+                    }
+                }
+                children=move |artist| {
+                    view!{
+                        <ArtistCard artist=artist/>
+                    }
+                }
+            />
+        </Suspense>
         </div>
     }
 }

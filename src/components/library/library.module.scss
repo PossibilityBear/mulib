@@ -42,3 +42,9 @@ button.TabSelected {
 h1.Title {
     color: colors.$AccentLight
 }
+
+div.ListContainer {
+    display: flex;
+    flex-direction: column;
+    overflow-y: hidden;
+}

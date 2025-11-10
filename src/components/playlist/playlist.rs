@@ -18,11 +18,12 @@ pub fn PlaylistCard(list: Option<Playlist>) -> impl IntoView {
             fallback=|| view!{None}
         >
             <div class=move || {
-                if let SongListSource::Playlist(playlist) = list_source.get() {
-                    vec![playlist::PlaylistCard, playlist::Selected].join(" ")
-                } else {
-                    playlist::PlaylistCard.to_string()
-                }
+                if let SongListSource::Playlist(p) = list_source.get() {
+                    if p.id == list.get().unwrap().id {
+                        return vec![playlist::PlaylistCard, playlist::Selected].join(" ")
+                    }
+                } 
+                playlist::PlaylistCard.to_string()
             }>
                 <div>
                     // Playlist Art

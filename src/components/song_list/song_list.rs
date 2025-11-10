@@ -55,6 +55,20 @@ pub async fn get_playlist_songs(playlist_id: i64) -> Result<Vec<Song>, ServerFnE
     Ok(songs)
 }
 
+#[server(
+    prefix = "/api",
+    endpoint = "get_songs_by_artist"
+)]
+pub async fn get_songs_by_artist(artist_id: i64) -> Result<Vec<Song>, ServerFnError> {
+    use crate::app_state::AppState;
+    use crate::database::commands::songs::get_songs_by_artist;
+
+    let state = use_context::<AppState>().expect("To Have Found App State");
+
+    let songs = get_songs_by_artist(&state.db, artist_id).await?;
+
+    Ok(songs)
+}
 
 
 /// helper function used to get around different concrete types
@@ -64,7 +78,7 @@ pub async fn get_playlist_songs(playlist_id: i64) -> Result<Vec<Song>, ServerFnE
 async fn song_source_helper(source: SongListSource) -> Result<Vec<Song>, ServerFnError> {
     match source {
         SongListSource::Album(_album) => todo!(),
-        SongListSource::Artist(_artist) => todo!(),
+        SongListSource::Artist(artist) => get_songs_by_artist(artist.id).await,
         SongListSource::Playlist(playlist) => get_playlist_songs(playlist.id).await,
         SongListSource::All => get_all_songs().await,
     }
@@ -78,7 +92,7 @@ pub fn SongListTitleCard(source: RwSignal<SongListSource>) -> impl IntoView {
                 <h1 class=style::SongListSourceTitle>
                     {match source.get() {
                         SongListSource::Album(album) => todo!(),
-                        SongListSource::Artist(artist) => todo!(),
+                        SongListSource::Artist(artist) => artist.name,
                         SongListSource::Playlist(playlist) => playlist.title,
                         SongListSource::All => "All Songs".to_string(),
                     }}

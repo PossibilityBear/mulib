@@ -6,3 +6,4 @@ pub mod queue;
 pub mod song;
 pub mod library;
 pub mod playlist;
+pub mod artist;
