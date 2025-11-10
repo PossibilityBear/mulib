@@ -14,9 +14,10 @@ pub fn HomePage() -> impl IntoView {
     let queue_context = SongQueueContext::default();
     let show_queue = RwSignal::<bool>::new(false);
 
-    let (list_source, _) = signal(SongListSource::All); 
+    let list_source = RwSignal::<SongListSource>::new(SongListSource::All); 
     // let (list_source, _) = signal(SongListSource::Playlist(())); 
 
+    provide_context(list_source);
     provide_context(queue_context);
     view! {
         <div class=home_page::container>

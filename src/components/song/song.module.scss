@@ -1,5 +1,8 @@
+@use "../src/styles/color.scss" as colors;
+@use "../src/styles/sizes.scss" as sizes;
+
 img.album_art {
-  height: 3rlh;
+  height: sizes.$AlbumArt;
   flex-shrink: 0;
 }
 
@@ -20,7 +23,7 @@ p.title:hover {
   margin: 0px;
   margin-left: .5rlh;
   cursor: pointer;
-  color: green;
+  color: colors.$AccentStrong;
 }
 
 p.artist {
@@ -40,13 +43,15 @@ div.container {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 2%;
-  padding-left: 2%; 
-  padding-right: 2%; 
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-left: 10px; 
+  padding-right: 10px; 
+  border-radius: sizes.$BorderRadius;
 }
 
 div.container:hover {
-  background-color: lightgray;
+  background-color: colors.$Mid;
 }
 
 div.left {

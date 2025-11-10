@@ -1,0 +1,46 @@
+// Paths are relative to (cargo root dir)/stylance
+@use "../src/styles/color.scss" as colors;
+@use "../src/styles/sizes.scss" as sizes;
+
+div.PlaylistCard {
+    background-color: colors.$Dark;
+    display: flex;
+    column-gap: 10px;
+    align-items: center;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: sizes.$BorderRadius;
+}
+
+div.PlaylistCard:hover {
+    background-color: colors.$MidLight;
+}
+
+img.PlaylistArt {
+    height: sizes.$AlbumArt;
+}
+
+
+p.PlaylistName {
+    color: colors.$Light;
+    font-weight: 700;
+}
+
+p.SongCount {
+    color: colors.$Light;
+    font-weight: 300;
+}
+
+div.TextColGroup {
+    display: flex;
+    flex-direction: column;
+    row-gap: 10px;
+}
+
+div.Selected {
+    background-color: colors.$Mid;
+}
+
+div.Selected p {
+    color: colors.$AccentStrong;
+}

@@ -1,6 +1,24 @@
+@use "../src/styles/color.scss" as colors;
+@use "../src/styles/sizes.scss" as sizes;
+
 div.songs {
   max-height: 100%;
   width: 100%;
   overflow-y: auto;  /* Enable vertical scrolling when content exceeds max-height */
+  border-radius: sizes.$BorderRadius;
 }
 
+
+div.SongListSourceTitleCard {
+  background-color: colors.$Mid;
+  border-top-left-radius: sizes.$BorderRadius;
+  border-top-right-radius: sizes.$BorderRadius;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+
+h1.SongListSourceTitle {
+  padding: 0px;  
+  margin: 0px;  
+}

@@ -5,3 +5,4 @@ pub mod controls;
 pub mod queue;
 pub mod song;
 pub mod library;
+pub mod playlist;

@@ -2,6 +2,8 @@ use leptos::{prelude::{ServerFnError, *}};
 use stylance::import_crate_style;
 use crate::{components::song::song::{Song, SongAction}, models::{album::Album, artist::Artist, playlist::Playlist, song::Song}};
     
+import_crate_style!(style, "./src/components/song_list/song_list.module.scss");
+
 /// Defines the source of songs for the song list
 #[derive(Clone, PartialEq)]
 pub enum SongListSource {
@@ -26,17 +28,29 @@ pub async fn get_all_songs() -> Result<Vec<Song>, ServerFnError> {
     Ok(songs)
 }
 
+// There is a gotcha with server functions
+// when you pass a struct that has a vec field, if the 
+// vec is empty client side code omits it in the request
+// but then the request fails due to missing the field
+// in this case the song vec in the playlist struct can be
+// empty but then the request to get playlist songs fails
+// because of this, may need to make the field Option<Vec<Song>>
+
+
+// the issue here is an inconsistency in how empty vecs are treated
+// in the client side vs server side. workaround is just to pass
+// the values you are actually using.
 #[server(
     prefix = "/api",
     endpoint = "get_playlist_songs"
 )]
-pub async fn get_playlist_songs(playlist: Playlist) -> Result<Vec<Song>, ServerFnError> {
+pub async fn get_playlist_songs(playlist_id: i64) -> Result<Vec<Song>, ServerFnError> {
     use crate::app_state::AppState;
     use crate::database::commands::playlists::get_playlist_songs;
 
     let state = use_context::<AppState>().expect("To Have Found App State");
 
-    let songs = get_playlist_songs(&state.db, &playlist.id).await?;
+    let songs = get_playlist_songs(&state.db, &playlist_id).await?;
 
     Ok(songs)
 }
@@ -51,16 +65,34 @@ async fn song_source_helper(source: SongListSource) -> Result<Vec<Song>, ServerF
     match source {
         SongListSource::Album(_album) => todo!(),
         SongListSource::Artist(_artist) => todo!(),
-        SongListSource::Playlist(playlist) => get_playlist_songs(playlist).await,
+        SongListSource::Playlist(playlist) => get_playlist_songs(playlist.id).await,
         SongListSource::All => get_all_songs().await,
     }
 }
 
-import_crate_style!(style, "./src/components/song_list/song_list.module.scss");
+#[component]
+pub fn SongListTitleCard(source: RwSignal<SongListSource>) -> impl IntoView {
+    view!{
+        <div class=style::SongListSourceTitleCard> 
+            <Show when=move || {true}>
+                <h1 class=style::SongListSourceTitle>
+                    {match source.get() {
+                        SongListSource::Album(album) => todo!(),
+                        SongListSource::Artist(artist) => todo!(),
+                        SongListSource::Playlist(playlist) => playlist.title,
+                        SongListSource::All => "All Songs".to_string(),
+                    }}
+                </h1>
+            </Show>
+        </div>
+    }
+}
+
+
 // a list of songs from database
 #[component]
 pub fn SongList (
-    source: ReadSignal<SongListSource>
+    source: RwSignal<SongListSource>
 ) -> impl IntoView {
 
     let songs_res = Resource::new(
@@ -74,6 +106,7 @@ pub fn SongList (
 
     view! {
         <div class=style::songs>
+            <SongListTitleCard source=source/>
             <Suspense
                 fallback=move || view!{ <p> {"Song Loading..."} </p>}
                 >

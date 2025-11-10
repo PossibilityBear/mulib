@@ -1,5 +1,6 @@
 // Paths are relative to (cargo root dir)/stylance
 @use "../src/styles/color.scss" as colors;
+@use "../src/styles/sizes.scss" as sizes;
 
 div.container {
 	display: flex;
@@ -28,7 +29,7 @@ div.controls {
 
 .Library {
 	box-sizing: border-box;
-	border-radius: 1dvh;
+	border-radius: sizes.$BorderRadius;
 	// border: solid colors.$AccentLight 5px;
 	flex-shrink: 2;
 	flex-basis: 20%;
@@ -38,7 +39,7 @@ div.controls {
 
 .queue {
 	box-sizing: border-box;
-	border-radius: 1dvh;
+	border-radius: sizes.$BorderRadius;
 	// border: solid colors.$AccentLight 5px;
 	flex-shrink: 2;
 	flex-basis: 20%;
@@ -48,7 +49,7 @@ div.controls {
 
 .song_list {
 	box-sizing: border-box;
-	border-radius: 1dvh;
+	border-radius: sizes.$BorderRadius;
 	background-color: colors.$Dark;
 	// border: solid colors.$AccentLight 5px;
 	align-self: flex-start;
