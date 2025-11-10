@@ -46,5 +46,8 @@ h1.Title {
 div.ListContainer {
     display: flex;
     flex-direction: column;
-    overflow-y: hidden;
+    max-height: 100%;
+    max-width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
