@@ -115,7 +115,7 @@ pub fn Queue() -> impl IntoView {
     let song_queue: SongQueue = use_context::<SongQueueContext>().expect("to have found song queue context").into();
     view!{
         <div class=queue::container>
-            <h1> "Queue" </h1>
+            <h1 class=queue::Title> "Queue" </h1>
             <div class=queue::songs>
                 <For
                     each=move || song_queue.get_songs()

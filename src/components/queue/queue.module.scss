@@ -1,9 +1,19 @@
+// Paths are relative to (cargo root dir)/stylance
+@use "../src/styles/color.scss" as colors;
+@use "../src/styles/sizes.scss" as sizes;
+
 div.container{
   display: flex;
   flex-direction: column;
   align-items: center;
-  max-height: 100%;
   overflow: hidden;
+  background-color: colors.$Dark;
+  border-radius: sizes.$BorderRadius;
+  height: 100%;
+}
+
+h1.Title {
+  color: colors.$AccentLight
 }
 
 div.songs{
