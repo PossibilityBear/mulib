@@ -1,10 +1,12 @@
 use leptos::prelude::*;
 use stylance::import_crate_style;
 use crate::components::song_list::song_list::SongListSource;
+use crate::models::album::Album;
 use crate::models::artist::Artist;
 use crate::models::playlist::Playlist;
 use crate::components::playlist::playlist::PlaylistCard;
 use crate::components::artist::artist::ArtistCard;
+use crate::components::album::album::AlbumCard;
 
 import_crate_style!(library, "./src/components/library/library.module.scss");
 import_crate_style!(main, "./src/styles/main.module.scss");
@@ -72,6 +74,22 @@ pub async fn get_artists() -> Result<Vec<Artist>, ServerFnError> {
 }
 
 
+#[server(
+    prefix = "/api",
+    endpoint = "get_albums"
+)]
+pub async fn get_albums() -> Result<Vec<Album>, ServerFnError> {
+    use crate::app_state::AppState;
+    use crate::database::commands::albums::get_all_albums;
+
+    let state = use_context::<AppState>().expect("To have Found App State");
+
+    let playlists = get_all_albums(&state.db).await?;
+
+    Ok(playlists)
+}
+
+
 #[component]
 pub fn LibrarySidebar() -> impl IntoView {
     let tab_selection = RwSignal::new(Tabs::Playlists);
@@ -94,16 +112,12 @@ pub fn LibrarySidebar() -> impl IntoView {
                 <TabSelector tab=Tabs::Playlists tab_selection=tab_selection/>
             </div>
             <div class=library::ListContainer> 
-                <Show when=move || {tab_selection.get() == Tabs::Playlists}
-                    fallback=|| view!{}
-                >
-                    <PlaylistList/>
-                </Show>
-                <Show when=move || {tab_selection.get() == Tabs::Artists}
-                    fallback=|| view!{}
-                >
-                    <ArtistList/>
-                </Show>
+                <div></div>
+                {move || {match tab_selection.get() {
+                    Tabs::Playlists => view!{ <PlaylistList/> }.into_any(),
+                    Tabs::Albums => view!{ <AlbumList/> }.into_any(),
+                    Tabs::Artists => view!{ <ArtistList/> }.into_any(),
+                }}}
             </div>
         </div>
     }
@@ -122,7 +136,6 @@ pub fn PlaylistList() -> impl IntoView {
     );
 
     view!{
-        <div>
         <Suspense
             fallback=move || view!{<p> {"loading..."}</p>}
         >
@@ -151,7 +164,6 @@ pub fn PlaylistList() -> impl IntoView {
                 }
             />
         </Suspense>
-        </div>
     }
 }
 
@@ -169,7 +181,6 @@ pub fn ArtistList() -> impl IntoView {
 
 
     view!{
-        <div>
         <Suspense
             fallback=move || view!{<p> {"loading..."}</p>}
         >
@@ -198,6 +209,46 @@ pub fn ArtistList() -> impl IntoView {
                 }
             />
         </Suspense>
-        </div>
+    }
+}
+
+
+
+#[component]
+pub fn AlbumList() -> impl IntoView {
+
+    let albums = Resource::new(
+        move || {
+            // source.get()
+        },
+        |_| {
+            get_albums()
+        }
+    );
+
+
+    view!{
+        <Suspense
+            fallback=move || view!{<p> {"loading..."}</p>}
+        >
+            <For 
+                each=move || {
+                    if let Some(Ok(albums)) = albums.get() {
+                        albums.into_iter().map(|album| {
+                            album
+                        })
+                        .collect::<Vec<Album>>()
+                    } else {
+                        Vec::<Album>::new()
+                    }
+                }
+                key=|album| {album.id}
+                children=move |album| {
+                    view!{
+                        <AlbumCard album=album/>
+                    }
+                }
+            />
+        </Suspense>
     }
 }
