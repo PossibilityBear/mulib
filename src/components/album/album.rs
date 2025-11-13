@@ -9,12 +9,11 @@ pub fn AlbumCard(album: Album) -> impl IntoView {
     // let song_count = list.songs.len();
     let list_source = use_context::<RwSignal<SongListSource>>().expect("To have found song list source context");
 
-    let alb_id = album.id;
-    let alb_cp = album.clone();
+    let (album, _) = signal(album);
     view!{
         <div class=move || {
             if let SongListSource::Album(a) = list_source.get()  {
-                if (a.id == alb_id) {
+                if a.id == album.get().id {
                     return vec![album::AlbumCard, album::Selected].join(" ")
                 }
             } 
@@ -23,9 +22,9 @@ pub fn AlbumCard(album: Album) -> impl IntoView {
             <div class=album::TextColGroup>
                 <p class=album::Name
                     on:click=move |_| {
-                        list_source.set(SongListSource::Album(alb_cp.clone()))
+                        list_source.set(SongListSource::Album(album.get()))
                     }
-                >{ album.title }</p>
+                >{ move || album.get().title }</p>
                 // <p class=playlist::SongCount>{song_count} songs</p>
             </div>
         </div>

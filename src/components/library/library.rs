@@ -112,12 +112,23 @@ pub fn LibrarySidebar() -> impl IntoView {
                 <TabSelector tab=Tabs::Playlists tab_selection=tab_selection/>
             </div>
             <div class=library::ListContainer> 
-                <div></div>
-                {move || {match tab_selection.get() {
-                    Tabs::Playlists => view!{ <PlaylistList/> }.into_any(),
-                    Tabs::Albums => view!{ <AlbumList/> }.into_any(),
-                    Tabs::Artists => view!{ <ArtistList/> }.into_any(),
-                }}}
+                <ArtistList tab_selection=tab_selection.read_only()/>
+                <AlbumList tab_selection=tab_selection.read_only()/>
+                <PlaylistList tab_selection=tab_selection.read_only()/>
+
+                // For some reason trying to control visibility
+                // of components with For gets weird non-fatal errors
+                // instead just pass the signal to each component 
+                // for it to decide if it should render.
+
+                // Now there is an issue where it doesn't reload 
+                // library list ever. 
+
+                // {move || {match tab_selection.get() {
+                //     Tabs::Playlists => view!{ <AlbumList/> }.into_any(),
+                //     Tabs::Albums => view!{ <AlbumList/> }.into_any(),
+                //     Tabs::Artists => view!{ <AlbumList/> }.into_any(),
+                // }}}
             </div>
         </div>
     }
@@ -125,17 +136,11 @@ pub fn LibrarySidebar() -> impl IntoView {
 
 
 #[component]
-pub fn PlaylistList() -> impl IntoView {
-    let playlists = Resource::new(
-        move || {
-            // source.get()
-        },
-        |_| {
-            get_playlists()
-        }
-    );
+pub fn PlaylistList(tab_selection: ReadSignal<Tabs>) -> impl IntoView {
+    let playlists = OnceResource::new(get_playlists());
 
     view!{
+        <Show when=move || tab_selection.get() == Tabs::Playlists>
         <Suspense
             fallback=move || view!{<p> {"loading..."}</p>}
         >
@@ -143,20 +148,14 @@ pub fn PlaylistList() -> impl IntoView {
                 each=move || {
                     if let Some(Ok(playlists)) = playlists.get() {
                         playlists.into_iter().map(|playlist| {
-                            Some(playlist)
+                            playlist
                         })
-                        .collect::<Vec<Option<Playlist>>>()
+                        .collect::<Vec<Playlist>>()
                     } else {
-                        Vec::<Option<Playlist>>::new()
+                        Vec::<Playlist>::new()
                     }
                 }
-                key=|playlist| {
-                    if let Some(p) = playlist {
-                        p.id
-                    } else {
-                        0
-                    }
-                }
+                key=|playlist| playlist.id
                 children=move |playlist| {
                     view!{
                         <PlaylistCard list=playlist/>
@@ -164,23 +163,16 @@ pub fn PlaylistList() -> impl IntoView {
                 }
             />
         </Suspense>
+        </Show>
     }
 }
 
 #[component]
-pub fn ArtistList() -> impl IntoView {
-
-    let artists = Resource::new(
-        move || {
-            // source.get()
-        },
-        |_| {
-            get_artists()
-        }
-    );
-
+pub fn ArtistList(tab_selection: ReadSignal<Tabs>) -> impl IntoView {
+    let artists = OnceResource::new(get_artists());
 
     view!{
+        <Show when=move || tab_selection.get() == Tabs::Artists>
         <Suspense
             fallback=move || view!{<p> {"loading..."}</p>}
         >
@@ -188,20 +180,14 @@ pub fn ArtistList() -> impl IntoView {
                 each=move || {
                     if let Some(Ok(artists)) = artists.get() {
                         artists.into_iter().map(|artist| {
-                            Some(artist)
+                            artist
                         })
-                        .collect::<Vec<Option<Artist>>>()
+                        .collect::<Vec<Artist>>()
                     } else {
-                        Vec::<Option<Artist>>::new()
+                        Vec::<Artist>::new()
                     }
                 }
-                key=|artist| {
-                    if let Some(p) = artist {
-                        p.id
-                    } else {
-                        0
-                    }
-                }
+                key=|artist| {artist.id}
                 children=move |artist| {
                     view!{
                         <ArtistCard artist=artist/>
@@ -209,25 +195,18 @@ pub fn ArtistList() -> impl IntoView {
                 }
             />
         </Suspense>
+        </Show>
     }
 }
 
 
 
 #[component]
-pub fn AlbumList() -> impl IntoView {
-
-    let albums = Resource::new(
-        move || {
-            // source.get()
-        },
-        |_| {
-            get_albums()
-        }
-    );
-
+pub fn AlbumList(tab_selection: ReadSignal<Tabs>) -> impl IntoView {
+    let albums = OnceResource::new(get_albums());
 
     view!{
+        <Show when=move || tab_selection.get() == Tabs::Albums>
         <Suspense
             fallback=move || view!{<p> {"loading..."}</p>}
         >
@@ -250,5 +229,6 @@ pub fn AlbumList() -> impl IntoView {
                 }
             />
         </Suspense>
+        </Show>
     }
 }

@@ -144,20 +144,14 @@ pub fn SongList (
                         if let Some(Ok(songs)) = songs_res.get() {
                             songs.clone().iter()
                                 .map(|song| {
-                                    Some(song.clone())
+                                    song.clone()
                                 })
-                                .collect::<Vec<Option<Song>>>()
+                                .collect::<Vec<Song>>()
                         } else {
-                            Vec::<Option<Song>>::new()
+                            Vec::<Song>::new()
                         }
                     }
-                    key=|song| {
-                        if let Some(s) = song {
-                            s.id
-                        } else {
-                            0
-                        }
-                    }
+                    key=|song| song.id
                     children= move |song| {
                         view!{
                             <Song song=song actions={vec![SongAction::PlayNow, SongAction::AddToQueue]}/>

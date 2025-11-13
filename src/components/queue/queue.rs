@@ -123,7 +123,7 @@ pub fn Queue() -> impl IntoView {
                     children=move |song| {
                         view!{
                             <Song
-                                song=Some(song.into())
+                                song=song.into()
                                 actions={vec![]}
                             // on:click=move |_| {
                             //     queue.remove_songs(song.id.expect("song to have ID"));
