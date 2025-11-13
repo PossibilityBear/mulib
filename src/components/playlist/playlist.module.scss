@@ -49,3 +49,8 @@ div.Selected {
 div.Selected p {
     color: colors.$AccentStrong;
 }
+
+.playlist_art_placeholder {
+  fill: colors.$Light !important;
+  height: sizes.$AlbumArt;
+}

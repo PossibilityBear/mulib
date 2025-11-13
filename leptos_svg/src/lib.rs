@@ -62,6 +62,7 @@ impl Parse for Svg {
 
         let css_classes = parse_zero_or_more::<Class>(input);
 
+        eprintln!("[INFO] processing svg!({})", path);
         let svg_element = read_svg(&path);
 
         Ok(Svg {path, svg_element, css_classes})

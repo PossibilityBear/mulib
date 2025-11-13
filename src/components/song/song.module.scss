@@ -88,3 +88,8 @@ input.button {
 div.actions {
   float:right;
 }
+
+.album_art_placeholder {
+  fill: colors.$Light !important;
+  height: sizes.$AlbumArt;
+}

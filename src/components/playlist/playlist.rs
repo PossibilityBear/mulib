@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+use leptos_svg::svg;
 use stylance::import_crate_style;
 use crate::{components::song_list::song_list::SongListSource, models::playlist::Playlist};
 
@@ -21,7 +22,7 @@ pub fn PlaylistCard(list: Playlist) -> impl IntoView {
         }>
             <div>
                 // Playlist Art
-                <img class = playlist::PlaylistArt src="./public/album-art-placeholder.svg"/>
+                {svg!("./public/album-art-placeholder.svg", playlist::playlist_art_placeholder)}
             </div>
             <div class=playlist::TextColGroup>
                 <p class=playlist::PlaylistName

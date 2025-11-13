@@ -90,15 +90,17 @@ pub fn is_banned_attribute(tag_name: &str, key: &str) -> bool{
     // to match the case expected in XML definitions
     let ban_list: Vec<&str>;
 
+    // Maintain ban list on a per element basis
+    // but some things like fill we never want.
     if tag_name == "svg" {
         ban_list = vec![
             "height",
             "width",
             "id",
-            "style"
+            "style",
         ];
     } else {
-        ban_list = vec![];
+        ban_list = vec!["fill"];
     }
 
     ban_list.contains(&key)
@@ -150,6 +152,7 @@ pub fn read_svg(path: &FilePath) -> SvgElement{
 
 const XML_OPEN_DELIM: &str = "<?";
 const XML_CLOSE_DELIM: &str = "?>";
+const DOC_TYPE_OPEN_DELIM: &str = "<!";
 
 const OPEN_TAG_OPEN_DELIM: &str = "<";
 const CLOSE_TAG_OPEN_DELIM: &str = "</";
@@ -268,7 +271,10 @@ fn pop_attributes(tag_name: &str, contents: &mut String) -> Vec<SvgAttribute> {
                         cur_comp = AttrComp::EQ;
                     },
                     QT => {
-                        panic!("Badly formed SVG, unexpected open quote");
+                        panic!("Badly formed SVG, unexpected open quote in current key: {} , at {} ",
+                            cur_key,
+                            s
+                        );
                     },
                     c => {
                         // part of the key String
@@ -353,10 +359,20 @@ fn remove_xml_tags(contents: &mut String) {
     while let Some(open_i) = contents.find(XML_OPEN_DELIM) {
         match &contents[open_i..].find(XML_CLOSE_DELIM) {
             Some(close_i) => {
-                contents.replace_range(open_i..*close_i+XML_CLOSE_DELIM.len(), "")
+                contents.replace_range(open_i..open_i+*close_i+XML_CLOSE_DELIM.len(), "")
             }
             None => panic!("error parsing svg file for svg macro: \
             xml opening delimeter found but no corresponding closing delimiter ")
+        }
+    }
+
+    while let Some(open_i) = contents.find(DOC_TYPE_OPEN_DELIM) {
+        match &contents[open_i..].find(TAG_CLOSE_DELIM) {
+            Some(close_i) => {
+                contents.replace_range(open_i..open_i+*close_i+TAG_CLOSE_DELIM.len(), "")
+            }
+            None => panic!("error parsing svg file for svg macro: \
+            Doc type opening delimeter found but tag not closed")
         }
     }
 } 
@@ -373,7 +389,7 @@ fn parse_elements(contents:&mut String, parent_tag: &str) -> Vec<SvgElement> {
 
     // iterate throught the string file contents for siblings,
     // each iteration potentially recursing to collect children
-    while let Some((open_pat, _open_i)) 
+    while let Some((open_pat, open_i)) 
         = first_of(contents.as_str(), vec![
             CLOSE_TAG_OPEN_DELIM,
             OPEN_TAG_OPEN_DELIM, 
@@ -383,6 +399,15 @@ fn parse_elements(contents:&mut String, parent_tag: &str) -> Vec<SvgElement> {
     {
         match open_pat.as_str() {
             CLOSE_TAG_OPEN_DELIM => {
+                // first trim to the closing tag open delimeter, in the case
+                // there is a tag with a plaintext child 
+                // I don't plan on having any text in my svgs so toss it
+                if !contents[..open_i].trim().is_empty() {
+                    eprintln!("[WARN] svg contains element with a plain text child \
+                    that has been discarded, this is likely metadata")
+                }
+                *contents = contents[open_i..].to_string();
+                
                 // get name of tag we are closing, don't remove it in case
                 // it belongs to the parent tag 
                 let closing_tag_name = peek_tag_name(contents);

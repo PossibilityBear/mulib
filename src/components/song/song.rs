@@ -1,7 +1,10 @@
 use leptos::{leptos_dom::logging::console_log, prelude::*};
+use leptos_svg::svg;
 use stylance::import_crate_style;
 use crate::{components::{controls::controls::PlaybackState, queue::queue::{SongQueue, SongQueueContext}}, models::song::Song};
     
+import_crate_style!(song, "./src/components/song/song.module.scss");
+import_crate_style!(main_style, "./src/styles/main.module.scss");
 
 
 #[derive(PartialEq, Clone, Copy, Debug)]
@@ -11,8 +14,6 @@ pub enum SongAction {
     RemoveFromQueue, // Removes this song from the queue (for use in queue UI)
 }
 
-import_crate_style!(song, "./src/components/song/song.module.scss");
-// import_crate_style!(main_style, "./src/styles/main.module.scss");
 // a single song
 #[component] 
 pub fn Song(song: Song, actions: Vec<SongAction>) -> impl IntoView {
@@ -46,7 +47,7 @@ pub fn Song(song: Song, actions: Vec<SongAction>) -> impl IntoView {
     view! {
         <div class=song::container >
             <div class=song::left>
-                <img class=song::album_art src="/public/album-art-placeholder.svg"/>
+                {svg!("./public/album-art-placeholder.svg", song::album_art_placeholder)}
                 <div class=song::col_group>
                     <p class=song::title on:click=play_now>
                         // title
@@ -66,7 +67,12 @@ pub fn Song(song: Song, actions: Vec<SongAction>) -> impl IntoView {
                 <div class=song::actions>
                     {if is_add_to_queue {
                         Some(view! {
-                            <input class=song::button type="image" src="/public/add-to-queue.svg" on:click=add_to_queue/>
+                            <button 
+                                class=main_style::svg_button
+                                on:click=add_to_queue
+                            >
+                                {svg!("./public/add-to-queue.svg", main_style::svg_button)}
+                            </button>
                         })
                     } else {
                         None
