@@ -1,5 +1,6 @@
 // Paths are relative to (cargo root dir)/stylance
 @use "../src/styles/color.scss" as colors;
+@use "../src/styles/sizes.scss" as sizes;
 
 
 div.LibContainer {
@@ -31,7 +32,17 @@ button.Tab {
     font-weight: 500;
 }
 
-button.Tab:hover {
+button.AllSongs {
+    background-color: transparent;
+    border-radius: 20px;
+    padding: 8px;
+    color: colors.$AccentLight;
+    border: none;
+    font-size: 20px;
+    font-weight: 500;
+}
+
+button.Tab:hover, button.AllSongs:hover {
     background-color: colors.$MidLight;
 }
 
@@ -50,4 +61,60 @@ div.ListContainer {
     max-width: 100%;
     overflow-y: auto;
     overflow-x: hidden;
+}
+
+div.CreateDropDown {
+    position: relative;
+}
+
+button.CreateDropDown {
+    background-color: transparent;
+    position: relative;
+    color: colors.$AccentLight;
+    border-radius: 100%;
+    border-color: transparent;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+button.CreateDropDown:hover {
+    background-color: colors.$Mid;
+}
+
+button.CreateDropDownOpt {
+    background: transparent;
+    font-size: 20px;
+    font-weight: 500;
+    color: colors.$Light;
+    border-radius: sizes.$BorderRadius;
+    border-color: transparent;
+    text-align: left;
+    padding: 10px;
+}
+button.CreateDropDownOpt:hover {
+    background-color: colors.$Mid;
+}
+
+
+div.CreateDropDownOpts {
+    position: absolute;
+    top: 45px;
+    left: 0;
+    width:200px;
+    border-radius: sizes.$BorderRadius;
+    display: flex;
+    flex-direction: column;
+    justify-content: left;
+    row-gap: 20px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    background: colors.$MidLight;
+}
+
+.CreateIcon, .CreateIcon rect {
+    fill: colors.$AccentLight !important
 }
