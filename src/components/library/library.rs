@@ -5,8 +5,11 @@ use crate::components::song_list::song_list::SongListSource;
 use crate::models::album::Album;
 use crate::models::artist::Artist;
 use crate::models::playlist::Playlist;
+use leptos::html::Div;
+use leptos::logging::log;
 use leptos::prelude::*;
 use leptos_svg::svg;
+use leptos_use::{OnClickOutsideOptions, on_click_outside, on_click_outside_with_options};
 use stylance::import_crate_style;
 
 import_crate_style!(library, "./src/components/library/library.module.scss");
@@ -83,9 +86,25 @@ pub async fn get_albums() -> Result<Vec<Album>, ServerFnError> {
 pub fn CreateDropDown() -> impl IntoView {
     let (show_dd, set_show_dd) = signal(false);
 
+    let dd_ref = NodeRef::<Div>::new();
+
+    // using a node-ref with on_click_outside prior to the node being generated
+    // causes a server side error, to get around this wrap in an effect
+    Effect::new(move |_| {
+        // silence error from server side since this is a no-op on 
+        // server side it never gets used and that's okay.
+        #[allow(unused_must_use)]
+        on_click_outside_with_options(
+            dd_ref, 
+            move |_| {set_show_dd.set(!show_dd.get());},
+            OnClickOutsideOptions::default().ignore(["#CreateDropDownButton"])
+        );
+    });
+
     view! {
         <div class=library::CreateDropDown>
             <button
+                id="CreateDropDownButton"
                 class=library::CreateDropDown
                 on:click=move |_| {
                     set_show_dd.set(!show_dd.get());
@@ -93,28 +112,31 @@ pub fn CreateDropDown() -> impl IntoView {
             >
                 {svg!("./public/plus.svg", main::svg_button, library::CreateIcon)}
             </button>
-            <Show when=move || {show_dd.get()}>
-                <div class=library::CreateDropDownOpts>
-                    <button
-                        class=library::CreateDropDownOpt
-                        on:click=move |_| {
-                            set_show_dd.set(!show_dd.get());
-                            // Create a new Playlist and navigate to it
-                        }
-                    >
-                        New Playlist
-                    </button>
-                    <button
-                        class=library::CreateDropDownOpt
-                        on:click=move |_| {
-                            set_show_dd.set(!show_dd.get());
-                            // Open Upload dialog
-                        }
-                    >
-                        Upload Music
-                    </button>
-                </div>
-            </Show>
+            <div class=library::CreateDropDownOpts
+                style=move || {if !show_dd.get() {"visibility: hidden"} else {""}}
+                node_ref=dd_ref
+            >
+                <button
+                    class=library::CreateDropDownOpt
+                    on:click=move |_| {
+                        set_show_dd.set(!show_dd.get());
+                        // Create a new Playlist and navigate to it
+                    }
+                >
+                    New Playlist
+                </button>
+                <button
+                    class=library::CreateDropDownOpt
+                    on:click=move |_| {
+                        set_show_dd.set(!show_dd.get());
+                        // Open Upload dialog
+                    }
+                >
+                    Upload Music
+                </button>
+            </div>
+                    
+       
         </div>
     }
 }
