@@ -1,8 +1,9 @@
-pub mod components;
-pub mod models;
-pub mod database;
 #[cfg(feature = "ssr")]
 pub mod app_state;
+pub mod components;
+pub mod config_keys;
+pub mod database;
+pub mod models;
 
 #[cfg(feature = "hydrate")]
 #[wasm_bindgen::prelude::wasm_bindgen]
