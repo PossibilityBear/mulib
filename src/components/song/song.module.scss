@@ -1,11 +1,6 @@
 @use "../src/styles/color.scss" as colors;
 @use "../src/styles/sizes.scss" as sizes;
 
-img.album_art {
-  height: sizes.$AlbumArt;
-  flex-shrink: 0;
-}
-
 p {
   text-overflow: ellipsis;
   overflow: hidden;
@@ -79,11 +74,6 @@ div.col_group {
 //   display: flex;
 //   flex-direction: column;
 // }
-
-input.button {
-  height: 1rlh;
-  flex-shrink: 0;
-}
 
 div.actions {
   float:right;

@@ -2,7 +2,6 @@ use sqlx::Error;
 
 use crate::database::db_models::*;
 use crate::database::utils::db_connection::*;
-use crate::models::{album, artist};
 use crate::models::song::Song;
 
 /// blindly retreives all songs from the database
@@ -30,18 +29,14 @@ pub async fn get_all_songs(conn: &DbConnection) -> Result<Vec<Song>, Error> {
             s.title COLLATE NOCASE ASC 
         "
     )
-        .fetch_all(&conn.db)
-        .await
-        .unwrap();
+    .fetch_all(&conn.db)
+    .await
+    .unwrap();
 
-
-    let songs: Vec<Song> = result.into_iter().map(|res| { 
-        res.into()
-    }).collect();
+    let songs: Vec<Song> = result.into_iter().map(|res| res.into()).collect();
 
     Ok(songs)
 }
-
 
 /// Retreive all songs for the given artist from the database
 pub async fn get_songs_by_artist(conn: &DbConnection, artist_id: i64) -> Result<Vec<Song>, Error> {
@@ -63,21 +58,16 @@ pub async fn get_songs_by_artist(conn: &DbConnection, artist_id: i64) -> Result<
         LEFT JOIN Albums AS alb ON alb.Id = s.album_id
         LEFT JOIN Artists AS AlbArt ON alb.artist_id= AlbArt.Id
         WHERE s.artist_id = ?
-        ORDER BY 
-            art.name COLLATE NOCASE ASC, 
-            alb.title COLLATE NOCASE ASC, 
+        ORDER BY art.name COLLATE NOCASE ASC, alb.title COLLATE NOCASE ASC, 
             s.title COLLATE NOCASE ASC 
         ",
         artist_id
     )
-        .fetch_all(&conn.db)
-        .await
-        .unwrap();
+    .fetch_all(&conn.db)
+    .await
+    .unwrap();
 
-
-    let songs: Vec<Song> = result.into_iter().map(|res| { 
-        res.into()
-    }).collect();
+    let songs: Vec<Song> = result.into_iter().map(|res| res.into()).collect();
 
     Ok(songs)
 }
@@ -109,14 +99,12 @@ pub async fn get_songs_by_album(conn: &DbConnection, album_id: i64) -> Result<Ve
         ",
         album_id
     )
-        .fetch_all(&conn.db)
-        .await
-        .unwrap();
+    .fetch_all(&conn.db)
+    .await
+    .unwrap();
 
-
-    let songs: Vec<Song> = result.into_iter().map(|res| { 
-        res.into()
-    }).collect();
+    let songs: Vec<Song> = result.into_iter().map(|res| res.into()).collect();
 
     Ok(songs)
 }
+

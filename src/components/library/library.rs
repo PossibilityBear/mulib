@@ -6,10 +6,9 @@ use crate::models::album::Album;
 use crate::models::artist::Artist;
 use crate::models::playlist::Playlist;
 use leptos::html::Div;
-use leptos::logging::log;
 use leptos::prelude::*;
 use leptos_svg::svg;
-use leptos_use::{OnClickOutsideOptions, on_click_outside, on_click_outside_with_options};
+use leptos_use::{on_click_outside_with_options, OnClickOutsideOptions};
 use stylance::import_crate_style;
 
 import_crate_style!(library, "./src/components/library/library.module.scss");
@@ -91,13 +90,17 @@ pub fn CreateDropDown() -> impl IntoView {
     // using a node-ref with on_click_outside prior to the node being generated
     // causes a server side error, to get around this wrap in an effect
     Effect::new(move |_| {
-        // silence error from server side since this is a no-op on 
+        // silence error from server side since this is a no-op on
         // server side it never gets used and that's okay.
         #[allow(unused_must_use)]
         on_click_outside_with_options(
-            dd_ref, 
-            move |_| {set_show_dd.set(!show_dd.get());},
-            OnClickOutsideOptions::default().ignore(["#CreateDropDownButton"])
+            dd_ref,
+            move |_| {
+                if show_dd.get() {
+                    set_show_dd.set(false);
+                }
+            },
+            OnClickOutsideOptions::default().ignore(["#CreateDropDownButton"]),
         );
     });
 
@@ -135,8 +138,8 @@ pub fn CreateDropDown() -> impl IntoView {
                     Upload Music
                 </button>
             </div>
-                    
-       
+
+
         </div>
     }
 }
@@ -287,4 +290,3 @@ pub fn AlbumList(tab_selection: ReadSignal<Tabs>) -> impl IntoView {
         </Show>
     }
 }
-

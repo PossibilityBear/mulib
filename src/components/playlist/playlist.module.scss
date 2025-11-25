@@ -16,21 +16,10 @@ div.PlaylistCard:hover {
     background-color: colors.$MidLight;
 }
 
-img.PlaylistArt {
-    height: sizes.$AlbumArt;
-}
-
 
 p.PlaylistName {
     color: colors.$Light;
     font-weight: 700;
-    width: 90%;
-    text-overflow: ellipsis;
-}
-
-p.SongCount {
-    color: colors.$Light;
-    font-weight: 300;
     width: 90%;
     text-overflow: ellipsis;
 }

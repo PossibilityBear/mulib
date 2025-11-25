@@ -1,22 +1,23 @@
+use crate::{components::song_list::song_list::SongListSource, models::artist::Artist};
 use leptos::prelude::*;
 use stylance::import_crate_style;
-use crate::{components::song_list::song_list::SongListSource, models::artist::Artist};
 
 import_crate_style!(artist, "./src/components/artist/artist.module.scss");
 
 #[component]
 pub fn ArtistCard(artist: Artist) -> impl IntoView {
     // let song_count = list.songs.len();
-    let list_source = use_context::<RwSignal<SongListSource>>().expect("To have found song list source context");
+    let list_source =
+        use_context::<RwSignal<SongListSource>>().expect("To have found song list source context");
 
     let (artist, _) = signal(artist);
-    view!{
+    view! {
         <div class=move || {
             if let SongListSource::Artist(a) = list_source.get()  {
-                if (a.id == artist.get().id) {
+                if a.id == artist.get().id {
                     return vec![artist::ArtistCard, artist::Selected].join(" ")
                 }
-            } 
+            }
             artist::ArtistCard.to_string()
         }>
             <div class=artist::TextColGroup>
@@ -30,3 +31,4 @@ pub fn ArtistCard(artist: Artist) -> impl IntoView {
         </div>
     }
 }
+

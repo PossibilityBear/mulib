@@ -3,7 +3,6 @@ use sqlx::Error;
 use crate::database::db_models::*;
 use crate::database::utils::db_connection::*;
 use crate::models::album::Album;
-use crate::models::artist::Artist;
 
 /// blindly retreives all albums from the database
 pub async fn get_all_albums(conn: &DbConnection) -> Result<Vec<Album>, Error> {
@@ -21,14 +20,12 @@ pub async fn get_all_albums(conn: &DbConnection) -> Result<Vec<Album>, Error> {
             alb.title COLLATE NOCASE ASC
         "
     )
-        .fetch_all(&conn.db)
-        .await
-        .unwrap();
+    .fetch_all(&conn.db)
+    .await
+    .unwrap();
 
-
-    let albums: Vec<Album> = result.into_iter().map(|res| { 
-        res.into()
-    }).collect();
+    let albums: Vec<Album> = result.into_iter().map(|res| res.into()).collect();
 
     Ok(albums)
 }
+
