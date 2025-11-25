@@ -1,27 +1,29 @@
-use axum::{body::Body, extract::{Request, State}, response::{IntoResponse, Response}};
+use axum::{
+    body::Body,
+    extract::{Request, State},
+    response::{IntoResponse, Response},
+};
 use leptos::prelude::provide_context;
 use leptos_axum::{handle_server_fns_with_context, render_app_to_stream_with_context};
 
-pub mod components;
-pub mod models;
-pub mod database;
 pub mod app_state;
-
+pub mod components;
+pub mod config_keys;
+pub mod database;
+pub mod models;
 
 #[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() {
+    use crate::app_state::AppState;
+    use crate::components::app::{shell, App};
+    use crate::database::commands::initialize::initialize_db;
+    use crate::database::utils::{db_connection::*, migrate::migrate};
     use axum::routing::get;
     use axum::Router;
     use leptos::logging::log;
     use leptos::prelude::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
-    use crate::app_state::AppState;
-    use crate::components::app::{shell, App};
-    use crate::database::utils::{
-        db_connection::*, migrate::migrate
-    };
-    use crate::database::commands::initialize::initialize_db;
     use tower_http::services::ServeDir;
 
     println!("STARTING --- database setup ---");
@@ -36,18 +38,28 @@ async fn main() {
     let addr = conf.leptos_options.site_addr;
     let leptos_options = conf.leptos_options;
     // Initialize AppState
-    let state = AppState { leptos_options, db: conn };
-
+    let state = AppState {
+        leptos_options,
+        db: conn,
+    };
 
     // Generate the list of routes in your Leptos App
     let routes = generate_route_list(App);
 
     let app = Router::new()
-        .route("/api/{*fn_name}", get(server_fn_handler).post(server_fn_handler))
-        .leptos_routes_with_handler(routes, get(leptos_routes_handler) )
+        .route(
+            "/api/{*fn_name}",
+            get(server_fn_handler).post(server_fn_handler),
+        )
+        .leptos_routes_with_handler(routes, get(leptos_routes_handler))
         .nest_service("/music", ServeDir::new("music"))
         .nest_service("/public", ServeDir::new("public"))
-        .fallback::<_, (_, _, axum::extract::State<AppState>, axum::http::Request<axum::body::Body>)>(leptos_axum::file_and_error_handler(shell))
+        .fallback::<_, (
+            _,
+            _,
+            axum::extract::State<AppState>,
+            axum::http::Request<axum::body::Body>,
+        )>(leptos_axum::file_and_error_handler(shell))
         .with_state(state);
 
     // run our app with hyper
@@ -67,7 +79,7 @@ pub fn main() {
 }
 
 #[cfg(feature = "ssr")]
-async fn server_fn_handler (
+async fn server_fn_handler(
     State(app_state): State<app_state::AppState>,
     req: Request<Body>,
 ) -> impl IntoResponse {
@@ -75,10 +87,10 @@ async fn server_fn_handler (
         move || {
             provide_context(app_state.clone());
         },
-        req
-    ).await
+        req,
+    )
+    .await
 }
-
 
 #[cfg(feature = "ssr")]
 async fn leptos_routes_handler(
@@ -91,9 +103,7 @@ async fn leptos_routes_handler(
         move || {
             provide_context(app_state.clone());
         },
-        move || {
-            shell(opt.clone())
-        }
+        move || shell(opt.clone()),
     );
     handler(req).await.into_response()
 }
