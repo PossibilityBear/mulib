@@ -81,8 +81,23 @@ pub async fn get_albums() -> Result<Vec<Album>, ServerFnError> {
     Ok(playlists)
 }
 
+#[server(prefix = "/api", endpoint = "create_new_playlist")]
+pub async fn create_playlist() -> Result<Playlist, ServerFnError> {
+    use crate::app_state::AppState;
+    use crate::database::commands::playlists::create_playlist;
+
+    let state = use_context::<AppState>().expect("To have Found App State");
+
+    let playlist = create_playlist(&state.db).await?;
+
+    Ok(playlist)
+}
+
 #[component]
-pub fn CreateDropDown() -> impl IntoView {
+pub fn CreateDropDown(
+    playlist_rf: ReadSignal<bool>,
+    set_playlist_rf: WriteSignal<bool>,
+) -> impl IntoView {
     let (show_dd, set_show_dd) = signal(false);
 
     let dd_ref = NodeRef::<Div>::new();
@@ -104,6 +119,9 @@ pub fn CreateDropDown() -> impl IntoView {
         );
     });
 
+    let song_list_source =
+        use_context::<RwSignal<SongListSource>>().expect("To have found song list");
+
     view! {
         <div class=library::CreateDropDown>
             <button
@@ -124,6 +142,17 @@ pub fn CreateDropDown() -> impl IntoView {
                     on:click=move |_| {
                         set_show_dd.set(!show_dd.get());
                         // Create a new Playlist and navigate to it
+                        let new_pl = OnceResource::new(create_playlist());
+
+                        // extract the value from reactive refresh signal
+                        // for use in effect wihtout creating infinite reactive loop
+                        let rf = playlist_rf.get();
+                        Effect::new(move |_| {
+                            if let Some(Ok(pl)) = new_pl.get() {
+                                song_list_source.set(SongListSource::Playlist(pl));
+                                set_playlist_rf.set(!rf);
+                            }
+                        });
                     }
                 >
                     New Playlist
@@ -150,12 +179,13 @@ pub fn LibrarySidebar() -> impl IntoView {
 
     let list_source =
         use_context::<RwSignal<SongListSource>>().expect("To have found song list source context");
+    let (playlist_rf, set_playlist_rf) = signal(false);
 
     view! {
         <div class=library::LibContainer>
             <div class=library::HeaderRow>
                 <h1 class=library::Title> Library </h1>
-                <CreateDropDown/>
+                <CreateDropDown playlist_rf set_playlist_rf/>
                 <button class=library::AllSongs
                     on:click=move |_| {
                         list_source.set(SongListSource::All);
@@ -172,7 +202,7 @@ pub fn LibrarySidebar() -> impl IntoView {
             <div class=library::ListContainer>
                 <ArtistList tab_selection=tab_selection.read_only()/>
                 <AlbumList tab_selection=tab_selection.read_only()/>
-                <PlaylistList tab_selection=tab_selection.read_only()/>
+                <PlaylistList refresh=playlist_rf tab_selection=tab_selection.read_only()/>
 
                 // For some reason trying to control visibility
                 // of components with For gets weird non-fatal errors
@@ -196,8 +226,8 @@ pub fn LibrarySidebar() -> impl IntoView {
 }
 
 #[component]
-pub fn PlaylistList(tab_selection: ReadSignal<Tabs>) -> impl IntoView {
-    let playlists = OnceResource::new(get_playlists());
+pub fn PlaylistList(refresh: ReadSignal<bool>, tab_selection: ReadSignal<Tabs>) -> impl IntoView {
+    let playlists = Resource::new(move || refresh.get(), |_| get_playlists());
 
     view! {
         <Show when=move || tab_selection.get() == Tabs::Playlists>

@@ -28,9 +28,7 @@ pub async fn get_playlists_info(conn: &DbConnection) -> Result<Vec<Playlist>, Er
     .fetch_all(&conn.db)
     .await?
     .into_iter()
-    .map(|playlist| -> Playlist {
-        playlist.into()
-    })
+    .map(|playlist| -> Playlist { playlist.into() })
     .collect();
 
     Ok(playlists)
@@ -144,4 +142,35 @@ pub async fn get_playlist_songs(conn: &DbConnection, list_id: &i64) -> Result<Ve
     let songs: Vec<Song> = result.into_iter().map(|res| res.into()).collect();
 
     Ok(songs)
+}
+
+pub async fn create_playlist(conn: &DbConnection) -> Result<Playlist, Error> {
+    let playlist_count = sqlx::query_scalar!(
+        "
+        SELECT COUNT(id)
+        FROM Playlists
+        ",
+    )
+    .fetch_one(&conn.db)
+    .await?;
+
+    let new_playlist_name = format!("New Playlist #{}", playlist_count);
+    let new_playlist_id = sqlx::query_scalar!(
+        "
+        INSERT INTO Playlists (title)
+        VALUES (?);
+        
+        SELECT last_insert_rowid();
+        ",
+        new_playlist_name
+    )
+    .fetch_one(&conn.db)
+    .await?;
+
+    Ok(Playlist {
+        id: new_playlist_id,
+        title: new_playlist_name,
+        description: String::new(),
+        songs: vec![],
+    })
 }
