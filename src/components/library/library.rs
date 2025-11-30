@@ -245,7 +245,7 @@ pub fn PlaylistList(refresh: ReadSignal<bool>, tab_selection: ReadSignal<Tabs>) 
                         Vec::<Playlist>::new()
                     }
                 }
-                key=|playlist| playlist.id
+                key=|playlist| playlist.id()
                 children=move |playlist| {
                     view!{
                         <PlaylistCard list=playlist/>

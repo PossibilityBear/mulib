@@ -14,7 +14,7 @@ stylance = "0.7.1"
 serde = "1.0.221"
 
 # Hydrate dependencies
-wasm-bindgen = { version = "0.2.101", optional = true }
+wasm-bindgen = { version = "0.2.105", optional = true }
 console_error_panic_hook = { version = "0.1", optional = true }
 
 # Server Side dependencies

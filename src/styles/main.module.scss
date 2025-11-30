@@ -3,43 +3,52 @@
 
 
 body {
-	padding: 0px;
-	margin: 0px;
-	overflow: hidden;
+  padding: 0px;
+  margin: 0px;
+  overflow: hidden;
 }
 
 /////////////////////////////// Text defaults //////////////////////////////////
-p, h1, h2, h3, h4, h5, h6 {
-	color: colors.$Light;
-	font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+label {
+  color: colors.$Light;
+  font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 }
 
 /////////////////////////////// SVG Buttons ////////////////////////////////////
 // default icon buttons sizing 
 input[type=image] {
-	height: 1rlh;
+  height: 1rlh;
 }
 
 button.svg_button {
-	height: fit-content;
-	background-color: transparent;
-	border: none;
+  height: fit-content;
+  background-color: transparent;
+  border: none;
 }
 
 svg.svg_button {
-	height: 30px;
-	fill: colors.$AccentLight !important;
+  height: 30px;
+  fill: colors.$AccentLight !important;
 }
 
 
 ////////////////// Styling the range track for range inputs ////////////////////
-$Unfilled:  colors.$Light;
-$Filled:  colors.$AccentStrong;
+$Unfilled: colors.$Light;
+$Filled: colors.$AccentStrong;
 
 //disable browser default styling for range inputs
 input[type="range"] {
-  -webkit-appearance: none; /* For WebKit browsers (Chrome, Safari) */
-  appearance: none; /* Standard property */
+  -webkit-appearance: none;
+  /* For WebKit browsers (Chrome, Safari) */
+  appearance: none;
+  /* Standard property */
   background: transparent;
   cursor: pointer;
   border: none;
@@ -48,26 +57,28 @@ input[type="range"] {
 /*Chrome*/
 // Hide the overflow from the range input and fill space of thumb with shadow color
 @media screen and (-webkit-min-device-pixel-ratio:0) {
-    input[type='range'] {
-      overflow: hidden;
-      width: 100%;
-	  border-radius: 4px;
-      -webkit-appearance: none;
-    }
-    input[type='range']::-webkit-slider-runnable-track {
-      height: 8px;
-      -webkit-appearance: none;
-	  background: $Unfilled;
-      margin-top: -1px;
-    }
-    input[type='range']::-webkit-slider-thumb {
-      width: 8px;
-      -webkit-appearance: none;
-      height: 8x;
-      cursor: ew-resize;
-      background: #434343;
-      box-shadow: -80px 0 0 80px $Filled;
-    }
+  input[type='range'] {
+    overflow: hidden;
+    width: 100%;
+    border-radius: 4px;
+    -webkit-appearance: none;
+  }
+
+  input[type='range']::-webkit-slider-runnable-track {
+    height: 8px;
+    -webkit-appearance: none;
+    background: $Unfilled;
+    margin-top: -1px;
+  }
+
+  input[type='range']::-webkit-slider-thumb {
+    width: 8px;
+    -webkit-appearance: none;
+    height: 8x;
+    cursor: ew-resize;
+    background: #434343;
+    box-shadow: -80px 0 0 80px $Filled;
+  }
 }
 
 
@@ -80,13 +91,16 @@ input[type="range"]::-moz-range-track {
   background: $Unfilled;
   border-radius: 4px;
 }
+
 input[type="range"]::-moz-range-progress {
   height: 8px;
   border-radius: 4px;
   background: $Filled;
 }
+
 input[type="range"]::-moz-range-thumb {
-  opacity: 0; /* Makes the thumb completely transparent */
+  opacity: 0;
+  /* Makes the thumb completely transparent */
 }
 
 
@@ -96,20 +110,27 @@ input[type="range"]::-moz-range-thumb {
 input[type="range"]::-ms-track {
   width: 100%;
   height: 8px;
-  background: transparent; /* Required for ms-fill-lower/upper to work */
+  background: transparent;
+  /* Required for ms-fill-lower/upper to work */
   border-color: transparent;
-  border-width: 16px 0; /* Adjust to match thumb size */
-  color: transparent; /* Hide default track color */
+  border-width: 16px 0;
+  /* Adjust to match thumb size */
+  color: transparent;
+  /* Hide default track color */
 }
+
 input[type="range"]::-ms-thumb {
-	opacity: 0;
+  opacity: 0;
 }
+
 input[type="range"]::-ms-fill-lower {
-  background: $Filled; /* Color of the filled portion */
-  border-radius: 4px;
-}
-input[type="range"]::-ms-fill-upper {
-  background: $Unfilled; /* Color of the unfilled portion */
+  background: $Filled;
+  /* Color of the filled portion */
   border-radius: 4px;
 }
 
+input[type="range"]::-ms-fill-upper {
+  background: $Unfilled;
+  /* Color of the unfilled portion */
+  border-radius: 4px;
+}

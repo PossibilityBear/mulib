@@ -1,23 +1,26 @@
-
-
+use crate::components::controls::controls::Controls;
+use crate::components::library::library::LibrarySidebar;
+use crate::components::queue::queue::{Queue, SongQueueContext};
+use crate::components::song_list::song_list::{SongList, SongListSource};
+use crate::models::playlist::PlaylistSource;
 use leptos::prelude::*;
 use stylance::import_crate_style;
-use crate::components::library::library::LibrarySidebar;
-use crate::components::song_list::song_list::{SongList, SongListSource};
-use crate::components::controls::controls::Controls;
-use crate::components::queue::queue::{Queue, SongQueueContext};
 
-
-import_crate_style!(home_page, "./src/components/home_page/home_page.module.scss");
+import_crate_style!(
+    home_page,
+    "./src/components/home_page/home_page.module.scss"
+);
 #[component]
 pub fn HomePage() -> impl IntoView {
     let queue_context = SongQueueContext::default();
     let show_queue = RwSignal::<bool>::new(false);
 
-    let list_source = RwSignal::<SongListSource>::new(SongListSource::All); 
-    // let (list_source, _) = signal(SongListSource::Playlist(())); 
+    let list_source = RwSignal::<SongListSource>::new(SongListSource::All);
+    let playlists = RwSignal::<PlaylistSource>::new(PlaylistSource::new());
+    // let (list_source, _) = signal(SongListSource::Playlist(()));
 
     provide_context(list_source);
+    provide_context(playlists);
     provide_context(queue_context);
     view! {
         <div class=home_page::container>
@@ -40,6 +43,6 @@ pub fn HomePage() -> impl IntoView {
                 <Controls queue=queue_context.into() show_queue=show_queue />
             </div>
         </div>
-        
+
     }
 }

@@ -1,4 +1,6 @@
-use sqlx::{prelude::FromRow};
+use std::collections::VecDeque;
+
+use sqlx::prelude::FromRow;
 
 use crate::models::playlist::Playlist;
 
@@ -10,12 +12,13 @@ pub struct DbPlaylist {
 }
 
 impl Into<Playlist> for DbPlaylist {
-    fn into(self) ->  Playlist {
-        Playlist {
-            id: self.id,
-            title: self.title,
-            description: self.description.unwrap_or(String::new()),
-            songs: vec![],
-        }
+    fn into(self) -> Playlist {
+        Playlist::new(
+            self.id,
+            self.title,
+            self.description.unwrap_or(String::new()),
+            vec![],
+        )
     }
 }
+

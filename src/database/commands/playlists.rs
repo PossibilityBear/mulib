@@ -6,10 +6,14 @@ use crate::models::playlist::Playlist;
 use crate::models::song::Song;
 
 pub async fn get_playlist(conn: &DbConnection, list_id: &i64) -> Result<Playlist, Error> {
-    let mut playlist = get_playlist_info(&conn, list_id).await?;
+    let playlist = get_playlist_info(&conn, list_id).await?;
     let songs = get_playlist_songs(&conn, list_id).await?;
-    playlist.songs = songs;
-    Ok(playlist)
+    Ok(Playlist::new(
+        playlist.id(),
+        playlist.title().clone(),
+        playlist.description().clone(),
+        songs,
+    ))
 }
 
 /// Retreives the list information on all playlists
@@ -167,10 +171,34 @@ pub async fn create_playlist(conn: &DbConnection) -> Result<Playlist, Error> {
     .fetch_one(&conn.db)
     .await?;
 
-    Ok(Playlist {
-        id: new_playlist_id,
-        title: new_playlist_name,
-        description: String::new(),
-        songs: vec![],
-    })
+    Ok(Playlist::new(
+        new_playlist_id,
+        new_playlist_name,
+        String::new(),
+        vec![],
+    ))
+}
+
+/// allows updating the title and description for the given playlist
+pub async fn update_info(
+    conn: &DbConnection,
+    list_id: &i64,
+    title: &String,
+    description: &String,
+) -> Result<(), Error> {
+    sqlx::query! {
+        "
+        UPDATE Playlists
+        SET title = ?,
+            description = ?
+        WHERE id = ?
+        ",
+        title,
+        description,
+        list_id,
+    }
+    .execute(&conn.db)
+    .await?;
+
+    Ok(())
 }
