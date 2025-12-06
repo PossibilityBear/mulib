@@ -1,5 +1,8 @@
+use std::collections::HashMap;
+
 use crate::models::song::Song;
 use leptos::{logging::log, prelude::*, reactive::spawn_local};
+use reactive_stores::Store;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -52,11 +55,7 @@ impl Playlist {
     /// udpate the title and description of the playlist
     /// if None is provided for title or description that field
     /// will be left unchanged
-    pub fn set_info(
-        &mut self,
-        title: Option<String>,
-        description: Option<String>,
-    ) -> Result<(), Error> {
+    pub fn set_info(&mut self, title: Option<String>, description: Option<String>) {
         description.map(|desc| self.description = desc);
         title.map(|title| self.title = title);
         let id = self.id.clone();
@@ -68,7 +67,6 @@ impl Playlist {
                 log!("Error setting playlist info: {}", e);
             }
         });
-        Ok(())
     }
 
     /// get a reference to the set of songs for this playlist
@@ -95,23 +93,18 @@ impl Playlist {
     // }
 }
 
-#[derive(Debug, Clone)]
-pub struct PlaylistSource {
+#[derive(Clone, Store, Serialize, Deserialize)]
+pub struct PlaylistsSource2 {
+    #[store(key: i64 = |list| list.id().clone())]
     lists: Vec<Playlist>,
+    is_loaded: bool,
 }
 
-impl PlaylistSource {
+impl PlaylistsSource2 {
     pub fn new() -> Self {
-        PlaylistSource { lists: vec![] }
-    }
-    /// returns the vec of all playlists
-    pub fn all(self) -> Vec<Playlist> {
-        self.lists
-    }
-
-    /// return a mutable ref to the list with the given id
-    /// for this to be safe across database and broswer data I also need to protect playlist fields
-    pub fn get_list<'a>(&'a mut self, id: i64) -> Option<&'a mut Playlist> {
-        self.lists.iter_mut().filter(|list| list.id() == id).next()
+        Self {
+            lists: vec![],
+            is_loaded: false,
+        }
     }
 }

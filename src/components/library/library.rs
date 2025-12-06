@@ -1,14 +1,16 @@
-use crate::components::album::album::AlbumCard;
 use crate::components::artist::artist::ArtistCard;
 use crate::components::playlist::playlist::PlaylistCard;
 use crate::components::song_list::song_list::SongListSource;
 use crate::models::album::Album;
 use crate::models::artist::Artist;
 use crate::models::playlist::Playlist;
+use crate::models::playlist::PlaylistsSource2StoreFields;
+use crate::{components::album::album::AlbumCard, models::playlist::PlaylistsSource2};
 use leptos::html::Div;
 use leptos::prelude::*;
 use leptos_svg::svg;
 use leptos_use::{on_click_outside_with_options, OnClickOutsideOptions};
+use reactive_stores::Store;
 use stylance::import_crate_style;
 
 import_crate_style!(library, "./src/components/library/library.module.scss");
@@ -45,18 +47,6 @@ pub fn TabSelector(tab: Tabs, tab_selection: RwSignal<Tabs>) -> impl IntoView {
     }
 }
 
-#[server(prefix = "/api", endpoint = "get_playlists")]
-pub async fn get_playlists() -> Result<Vec<Playlist>, ServerFnError> {
-    use crate::app_state::AppState;
-    use crate::database::commands::playlists::get_playlists_info;
-
-    let state = use_context::<AppState>().expect("To have Found App State");
-
-    let playlists = get_playlists_info(&state.db).await?;
-
-    Ok(playlists)
-}
-
 #[server(prefix = "/api", endpoint = "get_artists")]
 pub async fn get_artists() -> Result<Vec<Artist>, ServerFnError> {
     use crate::app_state::AppState;
@@ -76,9 +66,9 @@ pub async fn get_albums() -> Result<Vec<Album>, ServerFnError> {
 
     let state = use_context::<AppState>().expect("To have Found App State");
 
-    let playlists = get_all_albums(&state.db).await?;
+    let albums = get_all_albums(&state.db).await?;
 
-    Ok(playlists)
+    Ok(albums)
 }
 
 #[server(prefix = "/api", endpoint = "create_new_playlist")]
@@ -202,11 +192,10 @@ pub fn LibrarySidebar() -> impl IntoView {
             <div class=library::ListContainer>
                 <ArtistList tab_selection=tab_selection.read_only()/>
                 <AlbumList tab_selection=tab_selection.read_only()/>
-                <PlaylistList refresh=playlist_rf tab_selection=tab_selection.read_only()/>
+                <PlaylistList _refresh=playlist_rf tab_selection=tab_selection.read_only()/>
 
                 // For some reason trying to control visibility
                 // of components with For gets weird non-fatal errors
-                // instead just pass the signal to each component
                 // instead just pass the signal to each component
                 // for it to decide if it should render.
 
@@ -226,8 +215,9 @@ pub fn LibrarySidebar() -> impl IntoView {
 }
 
 #[component]
-pub fn PlaylistList(refresh: ReadSignal<bool>, tab_selection: ReadSignal<Tabs>) -> impl IntoView {
-    let playlists = Resource::new(move || refresh.get(), |_| get_playlists());
+pub fn PlaylistList(_refresh: ReadSignal<bool>, tab_selection: ReadSignal<Tabs>) -> impl IntoView {
+    let playlists =
+        use_context::<Store<PlaylistsSource2>>().expect("playlist source to have been registered");
 
     view! {
         <Show when=move || tab_selection.get() == Tabs::Playlists>
@@ -235,20 +225,13 @@ pub fn PlaylistList(refresh: ReadSignal<bool>, tab_selection: ReadSignal<Tabs>) 
             fallback=move || view!{<p> {"loading..."}</p>}
         >
             <For
-                each=move || {
-                    if let Some(Ok(playlists)) = playlists.get() {
-                        playlists.into_iter().map(|playlist| {
-                            playlist
-                        })
-                        .collect::<Vec<Playlist>>()
-                    } else {
-                        Vec::<Playlist>::new()
-                    }
-                }
-                key=|playlist| playlist.id()
+                each=move || {playlists.lists()}
+                key=|playlist| {playlist.read().id().clone()}
                 children=move |playlist| {
                     view!{
-                        <PlaylistCard list=playlist/>
+                        <div>
+                            <PlaylistCard playlist_id=playlist.read().id()/>
+                        </div>
                     }
                 }
             />

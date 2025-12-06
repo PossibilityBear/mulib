@@ -10,6 +10,7 @@ crate-type = ["cdylib", "rlib"]
 leptos = { version = "0.8.6" }
 leptos_router = { version = "0.8.0" }
 leptos_meta = { version = "0.8.0" }
+reactive_stores = "0.3.0"
 stylance = "0.7.1"
 serde = "1.0.221"
 

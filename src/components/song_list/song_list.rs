@@ -1,5 +1,3 @@
-use std::collections::VecDeque;
-
 use crate::{
     components::{
         playlist::playlist::PlaylistTitleCard,
@@ -33,17 +31,6 @@ pub async fn get_all_songs() -> Result<Vec<Song>, ServerFnError> {
     Ok(songs)
 }
 
-// There is a gotcha with server functions
-// when you pass a struct that has a vec field, if the
-// vec is empty client side code omits it in the request
-// but then the request fails due to missing the field
-// in this case the song vec in the playlist struct can be
-// empty but then the request to get playlist songs fails
-// because of this, may need to make the field Option<Vec<Song>>
-
-// the issue here is an inconsistency in how empty vecs are treated
-// in the client side vs server side. workaround is just to pass
-// the values you are actually using.
 #[server(prefix = "/api", endpoint = "get_playlist_songs")]
 pub async fn get_playlist_songs(playlist_id: i64) -> Result<Vec<Song>, ServerFnError> {
     use crate::app_state::AppState;
@@ -101,7 +88,7 @@ pub fn SongListTitleCard(source: RwSignal<SongListSource>) -> impl IntoView {
                 match source.get() {
                     SongListSource::Album(album) => view! {<BasicListTitleCard title=album.title/>}.into_any(),
                     SongListSource::Artist(artist) => view! {<BasicListTitleCard title=artist.name/>}.into_any(),
-                    SongListSource::Playlist(list) => view! {<PlaylistTitleCard playlist=list/>}.into_any(),
+                    SongListSource::Playlist(list) => view! {<PlaylistTitleCard playlist_id=list.id()/>}.into_any(),
                     SongListSource::All => view! {<BasicListTitleCard title="All Songs".to_string()/>}.into_any(),
                 }
             }}
