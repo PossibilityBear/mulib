@@ -10,11 +10,12 @@ crate-type = ["cdylib", "rlib"]
 leptos = { version = "0.8.6" }
 leptos_router = { version = "0.8.0" }
 leptos_meta = { version = "0.8.0" }
+reactive_stores = "0.3.0"
 stylance = "0.7.1"
 serde = "1.0.221"
 
 # Hydrate dependencies
-wasm-bindgen = { version = "0.2.101", optional = true }
+wasm-bindgen = { version = "0.2.105", optional = true }
 console_error_panic_hook = { version = "0.1", optional = true }
 
 # Server Side dependencies

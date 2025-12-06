@@ -1,7 +1,13 @@
-use leptos::{prelude::{ServerFnError, *}};
+use crate::{
+    components::{
+        playlist::playlist::PlaylistTitleCard,
+        song::song::{Song, SongAction},
+    },
+    models::{album::Album, artist::Artist, playlist::Playlist, song::Song},
+};
+use leptos::prelude::{ServerFnError, *};
 use stylance::import_crate_style;
-use crate::{components::song::song::{Song, SongAction}, models::{album::Album, artist::Artist, playlist::Playlist, song::Song}};
-    
+
 import_crate_style!(style, "./src/components/song_list/song_list.module.scss");
 
 /// Defines the source of songs for the song list
@@ -13,10 +19,7 @@ pub enum SongListSource {
     All,
 }
 
-#[server(
-    prefix = "/api",
-    endpoint = "get_all_songs"
-)]
+#[server(prefix = "/api", endpoint = "get_all_songs")]
 pub async fn get_all_songs() -> Result<Vec<Song>, ServerFnError> {
     use crate::app_state::AppState;
     use crate::database::commands::songs::get_all_songs;
@@ -28,22 +31,7 @@ pub async fn get_all_songs() -> Result<Vec<Song>, ServerFnError> {
     Ok(songs)
 }
 
-// There is a gotcha with server functions
-// when you pass a struct that has a vec field, if the 
-// vec is empty client side code omits it in the request
-// but then the request fails due to missing the field
-// in this case the song vec in the playlist struct can be
-// empty but then the request to get playlist songs fails
-// because of this, may need to make the field Option<Vec<Song>>
-
-
-// the issue here is an inconsistency in how empty vecs are treated
-// in the client side vs server side. workaround is just to pass
-// the values you are actually using.
-#[server(
-    prefix = "/api",
-    endpoint = "get_playlist_songs"
-)]
+#[server(prefix = "/api", endpoint = "get_playlist_songs")]
 pub async fn get_playlist_songs(playlist_id: i64) -> Result<Vec<Song>, ServerFnError> {
     use crate::app_state::AppState;
     use crate::database::commands::playlists::get_playlist_songs;
@@ -55,10 +43,7 @@ pub async fn get_playlist_songs(playlist_id: i64) -> Result<Vec<Song>, ServerFnE
     Ok(songs)
 }
 
-#[server(
-    prefix = "/api",
-    endpoint = "get_songs_by_artist"
-)]
+#[server(prefix = "/api", endpoint = "get_songs_by_artist")]
 pub async fn get_songs_by_artist(artist_id: i64) -> Result<Vec<Song>, ServerFnError> {
     use crate::app_state::AppState;
     use crate::database::commands::songs::get_songs_by_artist;
@@ -70,10 +55,7 @@ pub async fn get_songs_by_artist(artist_id: i64) -> Result<Vec<Song>, ServerFnEr
     Ok(songs)
 }
 
-#[server(
-    prefix = "/api",
-    endpoint = "get_songs_by_album"
-)]
+#[server(prefix = "/api", endpoint = "get_songs_by_album")]
 pub async fn get_songs_by_album(album_id: i64) -> Result<Vec<Song>, ServerFnError> {
     use crate::app_state::AppState;
     use crate::database::commands::songs::get_songs_by_album;
@@ -85,53 +67,48 @@ pub async fn get_songs_by_album(album_id: i64) -> Result<Vec<Song>, ServerFnErro
     Ok(songs)
 }
 
-
 /// helper function used to get around different concrete types
 /// returned from different functions that implement the Future
-/// trait but still have the output wrapped in a Future 
+/// trait but still have the output wrapped in a Future
 /// which is required by the Resouce
 async fn song_source_helper(source: SongListSource) -> Result<Vec<Song>, ServerFnError> {
     match source {
-        SongListSource::Album(album) => get_songs_by_album(album.id).await, 
+        SongListSource::Album(album) => get_songs_by_album(album.id).await,
         SongListSource::Artist(artist) => get_songs_by_artist(artist.id).await,
-        SongListSource::Playlist(playlist) => get_playlist_songs(playlist.id).await,
+        SongListSource::Playlist(playlist) => get_playlist_songs(playlist.id()).await,
         SongListSource::All => get_all_songs().await,
     }
 }
 
 #[component]
 pub fn SongListTitleCard(source: RwSignal<SongListSource>) -> impl IntoView {
-    view!{
-        <div class=style::SongListSourceTitleCard> 
-            <Show when=move || {true}>
-                <h1 class=style::SongListSourceTitle>
-                    {match source.get() {
-                        SongListSource::Album(album) => album.title,
-                        SongListSource::Artist(artist) => artist.name,
-                        SongListSource::Playlist(playlist) => playlist.title,
-                        SongListSource::All => "All Songs".to_string(),
-                    }}
-                </h1>
-            </Show>
+    view! {
+        <div class=style::SongListSourceTitleCard>
+            { move || {
+                match source.get() {
+                    SongListSource::Album(album) => view! {<BasicListTitleCard title=album.title/>}.into_any(),
+                    SongListSource::Artist(artist) => view! {<BasicListTitleCard title=artist.name/>}.into_any(),
+                    SongListSource::Playlist(list) => view! {<PlaylistTitleCard playlist_id=list.id()/>}.into_any(),
+                    SongListSource::All => view! {<BasicListTitleCard title="All Songs".to_string()/>}.into_any(),
+                }
+            }}
         </div>
     }
 }
 
+#[component]
+pub fn BasicListTitleCard(title: String) -> impl IntoView {
+    view! {
+        <h1 class=style::SongListSourceTitle>
+            {title}
+        </h1>
+    }
+}
 
 // a list of songs from database
 #[component]
-pub fn SongList (
-    source: RwSignal<SongListSource>
-) -> impl IntoView {
-
-    let songs_res = Resource::new(
-        move || {
-            source.get()
-        },
-        |source| {
-            song_source_helper(source)
-        }
-    );
+pub fn SongList(source: RwSignal<SongListSource>) -> impl IntoView {
+    let songs_res = Resource::new(move || source.get(), |source| song_source_helper(source));
 
     view! {
         <div class=style::songs>
@@ -139,7 +116,7 @@ pub fn SongList (
             <Suspense
                 fallback=move || view!{ <p> {"Song Loading..."} </p>}
                 >
-                <For 
+                <For
                     each=move || {
                         if let Some(Ok(songs)) = songs_res.get() {
                             songs.clone().iter()
@@ -162,5 +139,4 @@ pub fn SongList (
             </Suspense>
         </div>
     }
-
 }
