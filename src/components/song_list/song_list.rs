@@ -5,7 +5,12 @@ use crate::{
     },
     models::{album::Album, artist::Artist, playlist::Playlist, song::Song},
 };
-use leptos::prelude::{ServerFnError, *};
+use leptos::{
+    ev::{self, MouseEvent},
+    html::Div,
+    prelude::{ServerFnError, *},
+};
+use leptos_use::{on_click_outside_with_options, use_event_listener, OnClickOutsideOptions};
 use stylance::import_crate_style;
 
 import_crate_style!(style, "./src/components/song_list/song_list.module.scss");
@@ -110,33 +115,153 @@ pub fn BasicListTitleCard(title: String) -> impl IntoView {
 pub fn SongList(source: RwSignal<SongListSource>) -> impl IntoView {
     let songs_res = Resource::new(move || source.get(), |source| song_source_helper(source));
 
-    view! {
-        <div class=style::songs>
-            <SongListTitleCard source=source/>
-            <Suspense
-                fallback=move || view!{ <p> {"Song Loading..."} </p>}
-                >
-                <For
-                    each=move || {
-                        if let Some(Ok(songs)) = songs_res.get() {
-                            songs.clone().iter()
-                                .map(|song| {
-                                    song.clone()
-                                })
-                                .collect::<Vec<Song>>()
-                        } else {
-                            Vec::<Song>::new()
-                        }
-                    }
-                    key=|song| song.id
-                    children= move |song| {
-                        view!{
-                            <Song song=song actions={vec![SongAction::PlayNow, SongAction::AddToQueue]}/>
-                        }
-                    }
+    let (selected_songs, set_selected_songs) = signal(Vec::<Song>::new());
 
+    let select_song = move |song_list: Vec<Song>, song: Song| {
+        let song_list = song_list.clone();
+        move |ev: MouseEvent| {
+            if ev.shift_key() {
+                leptos::logging::log!("Shift Clicked");
+                // find the previously selected item if any,
+                if let Some(last_sel) = selected_songs.get().iter().last() {
+                    // then select throught the range
+                    // unwrap is safe, song can't be selected without being in song_list
+                    let last_sel_pos = song_list.iter().position(|s| s.id == last_sel.id).unwrap();
+                    let cur_sel_pos = song_list.iter().position(|s| s.id == song.id).unwrap();
+                    let start_pos: usize;
+                    let end_pos: usize;
+                    if last_sel_pos > cur_sel_pos {
+                        // backwards selections
+                        end_pos = last_sel_pos;
+                        start_pos = cur_sel_pos;
+                    } else {
+                        // forwards selections
+                        end_pos = cur_sel_pos;
+                        start_pos = last_sel_pos;
+                    }
+                    let mut new_selections: Vec<Song> = song_list
+                        .clone()
+                        .into_iter()
+                        .enumerate()
+                        .filter(|(i, s)| {
+                            *i >= start_pos && *i <= end_pos && !selected_songs.get().contains(s)
+                        })
+                        .map(|(_, s)| s)
+                        .collect();
+                    set_selected_songs.update(|songs| songs.append(&mut new_selections));
+                } else {
+                    // if none just select this song
+                    set_selected_songs.set(vec![song.clone()]);
+                }
+            } else if ev.ctrl_key() {
+                leptos::logging::log!("ctrl clicked");
+                set_selected_songs.update(|songs| songs.push(song.clone()));
+            } else {
+                set_selected_songs.set(vec![song.clone()]);
+            }
+
+            for song in selected_songs.get() {
+                leptos::logging::log!("Song name {}", song.title)
+            }
+        }
+    };
+
+    let (show_context, set_show_context) = signal(false);
+    let (context_xy, set_context_xy) = signal((0, 0));
+
+    let on_contextmenu = move |evt: MouseEvent| {
+        evt.prevent_default();
+        leptos::logging::log!("Hello from context menu event");
+        set_show_context.set(true);
+        set_context_xy.set((evt.client_x(), evt.client_y()))
+    };
+
+    let context_menu_ref = NodeRef::<Div>::new();
+
+    Effect::new(move |_| {
+        // silence error from server side since this is a no-op on
+        // server side it never gets used and that's okay.
+        #[allow(unused_must_use)]
+        on_click_outside_with_options(
+            context_menu_ref,
+            move |_| {
+                if show_context.get() {
+                    set_show_context.set(false);
+                }
+            },
+            OnClickOutsideOptions::default(), //.ignore(["#CreateDropDownButton"]),
+        );
+    });
+
+    view! {
+        <>
+            <div class=style::songs>
+                <SongListTitleCard source=source/>
+                <Suspense
+                    fallback=move || view!{ <p> {"Song Loading..."} </p>}
+                    >
+                    <For
+                        each=move || {
+                            if let Some(Ok(songs)) = songs_res.get() {
+                                songs.clone().iter()
+                                    .map(|song| {
+                                        song.clone()
+                                    })
+                                    .collect::<Vec<Song>>()
+                            } else {
+                                Vec::<Song>::new()
+                            }
+                        }
+                        key=|song| song.id
+                        children= move |song| {
+                            view!{
+                                <Song song=song.clone()
+                                    actions={vec![SongAction::PlayNow, SongAction::AddToQueue]}
+                                    on_select=select_song(songs_res.get().unwrap().unwrap(), song.clone())
+                                    on_context=on_contextmenu
+                                    is_selected=Memo::new(move |_| {
+                                        selected_songs.get().contains(&song.clone())
+                                    })
+                                />
+                            }
+                        }
+                    />
+                </Suspense>
+            </div>
+            <Show when=move || show_context.get()>
+                <SongContextMenu
+                    set_show=set_show_context
+                    xy_coords=context_xy
+                    node_ref=context_menu_ref
                 />
-            </Suspense>
+            </Show>
+        </>
+    }
+}
+
+#[component]
+pub fn SongContextMenu(
+    xy_coords: ReadSignal<(i32, i32)>,
+    node_ref: NodeRef<Div>,
+    set_show: WriteSignal<bool>,
+) -> impl IntoView {
+    view! {
+        <div class=style::context_menu
+            node_ref=node_ref
+            style=move || {format!("left: {}px; top: {}px;", xy_coords.get().0, xy_coords.get().1)}
+        >
+            <button
+                class=style::context_menu
+                on:click= move |_| { set_show.set(false); }
+            >
+                Add to Queue
+            </button>
+            <button
+                class=style::context_menu
+                on:click= move |_| { set_show.set(false); }
+            >
+                Add to Playlist
+            </button>
         </div>
     }
 }

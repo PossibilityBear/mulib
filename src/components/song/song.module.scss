@@ -13,6 +13,7 @@ p.title {
   margin-left: .5rlh;
   cursor: pointer;
 }
+
 p.title:hover {
   font-weight: 700;
   margin: 0px;
@@ -40,13 +41,18 @@ div.container {
   align-items: center;
   padding-top: 5px;
   padding-bottom: 5px;
-  padding-left: 10px; 
-  padding-right: 10px; 
+  padding-left: 10px;
+  padding-right: 10px;
   border-radius: sizes.$BorderRadius;
 }
 
-div.container:hover {
+div.container:hover,
+div.selected {
   background-color: colors.$Mid;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 div.left {
@@ -76,10 +82,39 @@ div.col_group {
 // }
 
 div.actions {
-  float:right;
+  float: right;
 }
 
 .album_art_placeholder {
   fill: colors.$Light !important;
   height: sizes.$AlbumArt;
 }
+
+
+
+// div.context_menu {
+//   position: absolute;
+//   display: flex;
+//   flex-direction: column;
+//   row-gap: 10px;
+//   background-color: colors.$MidDark;
+//   border-radius: sizes.$BorderRadius;
+//   width: 12%;
+//   padding: 20px;
+// }
+//
+//
+// button.context_menu {
+//   background: transparent;
+//   font-size: 20px;
+//   font-weight: 500;
+//   color: colors.$AccentLight;
+//   border-radius: sizes.$BorderRadius;
+//   border-color: transparent;
+//   text-align: left;
+//   padding: 10px;
+// }
+//
+// button.context_menu:hover {
+//   background-color: colors.$Mid;
+// }
