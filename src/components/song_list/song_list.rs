@@ -3,7 +3,12 @@ use crate::{
         playlist::playlist::PlaylistTitleCard,
         song::song::{Song, SongAction},
     },
-    models::{album::Album, artist::Artist, playlist::Playlist, song::Song},
+    models::{
+        album::Album,
+        artist::Artist,
+        playlist::{Playlist, PlaylistsSource, PlaylistsSourceStoreFields},
+        song::Song,
+    },
 };
 use leptos::{
     ev::{self, MouseEvent},
@@ -11,6 +16,7 @@ use leptos::{
     prelude::{ServerFnError, *},
 };
 use leptos_use::{on_click_outside_with_options, use_event_listener, OnClickOutsideOptions};
+use reactive_stores::Store;
 use stylance::import_crate_style;
 
 import_crate_style!(style, "./src/components/song_list/song_list.module.scss");
@@ -166,13 +172,13 @@ pub fn SongList(source: RwSignal<SongListSource>) -> impl IntoView {
         }
     };
 
-    let (show_context, set_show_context) = signal(false);
+    let show_context = RwSignal::new(false);
     let (context_xy, set_context_xy) = signal((0, 0));
 
     let on_contextmenu = move |evt: MouseEvent| {
         evt.prevent_default();
         leptos::logging::log!("Hello from context menu event");
-        set_show_context.set(true);
+        show_context.set(true);
         set_context_xy.set((evt.client_x(), evt.client_y()))
     };
 
@@ -186,7 +192,7 @@ pub fn SongList(source: RwSignal<SongListSource>) -> impl IntoView {
             context_menu_ref,
             move |_| {
                 if show_context.get() {
-                    set_show_context.set(false);
+                    show_context.set(false);
                 }
             },
             OnClickOutsideOptions::default(), //.ignore(["#CreateDropDownButton"]),
@@ -230,9 +236,10 @@ pub fn SongList(source: RwSignal<SongListSource>) -> impl IntoView {
             </div>
             <Show when=move || show_context.get()>
                 <SongContextMenu
-                    set_show=set_show_context
+                    set_show=show_context
                     xy_coords=context_xy
                     node_ref=context_menu_ref
+                    selected_songs=selected_songs
                 />
             </Show>
         </>
@@ -243,25 +250,68 @@ pub fn SongList(source: RwSignal<SongListSource>) -> impl IntoView {
 pub fn SongContextMenu(
     xy_coords: ReadSignal<(i32, i32)>,
     node_ref: NodeRef<Div>,
-    set_show: WriteSignal<bool>,
+    set_show: RwSignal<bool>,
+    selected_songs: ReadSignal<Vec<Song>>,
 ) -> impl IntoView {
+    let (add_to_playlist, set_add_to_playlist) = signal(false);
     view! {
         <div class=style::context_menu
             node_ref=node_ref
             style=move || {format!("left: {}px; top: {}px;", xy_coords.get().0, xy_coords.get().1)}
         >
-            <button
-                class=style::context_menu
-                on:click= move |_| { set_show.set(false); }
-            >
-                Add to Queue
-            </button>
-            <button
-                class=style::context_menu
-                on:click= move |_| { set_show.set(false); }
-            >
-                Add to Playlist
-            </button>
+            <div class=style::sub_context_menu>
+                <button
+                    class=style::context_menu
+                    on:click= move |_| {
+                        set_show.set(false);
+                    }
+                >
+                    Add to Queue
+                </button>
+                <button
+                    class=style::context_menu
+                    on:click= move |_| { set_add_to_playlist.set(true); }
+                >
+                    Add to Playlist
+                </button>
+            </div>
+            <Show when=move || add_to_playlist.get()>
+                <AddToPlaylistSubContext set_show=set_show.write_only() selected_songs/>
+            </Show>
+        </div>
+    }
+}
+
+#[component]
+pub fn AddToPlaylistSubContext(
+    set_show: WriteSignal<bool>,
+    selected_songs: ReadSignal<Vec<Song>>,
+) -> impl IntoView {
+    let playlists = expect_context::<Store<PlaylistsSource>>();
+    view! {
+        <div class=style::sub_context_menu>
+        {move || {
+            let lists = playlists.lists().get();
+            lists.into_iter().map(|list| {
+                view!{
+                    <button
+                        class=style::context_menu
+                        on:click= move |_| {
+                            playlists.lists().update(|set_list| {
+                                for l in set_list {
+                                    if l.id() == list.id() {
+                                        l.add_songs(selected_songs.get())
+                                    }
+                                }
+                            });
+                            set_show.set(false);
+                        }
+                    >
+                        {list.title().clone()}
+                    </button>
+                }
+            }).collect_view()
+        }}
         </div>
     }
 }

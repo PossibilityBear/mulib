@@ -2,7 +2,7 @@ use crate::components::controls::controls::Controls;
 use crate::components::library::library::LibrarySidebar;
 use crate::components::queue::queue::{Queue, SongQueueContext};
 use crate::components::song_list::song_list::{SongList, SongListSource};
-use crate::models::playlist::{Playlist, PlaylistsSource2, PlaylistsSource2StoreFields};
+use crate::models::playlist::{Playlist, PlaylistsSource, PlaylistsSourceStoreFields};
 use leptos::prelude::*;
 use reactive_stores::Store;
 use stylance::import_crate_style;
@@ -35,7 +35,7 @@ pub fn HomePage() -> impl IntoView {
     provide_context(list_source);
 
     // define playlists context
-    let playlists = Store::new(PlaylistsSource2::new());
+    let playlists = Store::new(PlaylistsSource::new());
     provide_context(playlists);
 
     // define action to load playlists from database

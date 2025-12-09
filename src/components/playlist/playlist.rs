@@ -1,6 +1,6 @@
 use crate::{
     components::song_list::song_list::SongListSource,
-    models::playlist::{PlaylistsSource2, PlaylistsSource2StoreFields},
+    models::playlist::{PlaylistsSource, PlaylistsSourceStoreFields},
 };
 use leptos::{html, prelude::*};
 use leptos_svg::svg;
@@ -17,7 +17,7 @@ pub fn PlaylistCard(playlist_id: i64) -> impl IntoView {
         use_context::<RwSignal<SongListSource>>().expect("To have found song list source context");
 
     let playlists =
-        use_context::<Store<PlaylistsSource2>>().expect("To have found playlist source context");
+        use_context::<Store<PlaylistsSource>>().expect("To have found playlist source context");
 
     //getter for making access less annoying
     let playlist = move || {
@@ -57,7 +57,7 @@ pub fn PlaylistCard(playlist_id: i64) -> impl IntoView {
 pub fn PlaylistTitleCard(playlist_id: i64) -> impl IntoView {
     let (show_edit_dialog, set_show_edit_dialog) = signal(false);
     let playlists =
-        use_context::<Store<PlaylistsSource2>>().expect("to have found playlists source");
+        use_context::<Store<PlaylistsSource>>().expect("to have found playlists source");
 
     let title_node: NodeRef<html::Input> = NodeRef::new();
     let desc_node: NodeRef<html::Input> = NodeRef::new();

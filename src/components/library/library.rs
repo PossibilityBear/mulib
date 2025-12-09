@@ -4,8 +4,11 @@ use crate::components::song_list::song_list::SongListSource;
 use crate::models::album::Album;
 use crate::models::artist::Artist;
 use crate::models::playlist::Playlist;
-use crate::models::playlist::PlaylistsSource2StoreFields;
-use crate::{components::album::album::AlbumCard, models::playlist::PlaylistsSource2};
+use crate::models::playlist::PlaylistsSourceStoreFields;
+use crate::{
+    components::album::album::AlbumCard,
+    models::playlist::{PlaylistsSource, PlaylistsSourceStoreFields},
+};
 use leptos::html::Div;
 use leptos::prelude::*;
 use leptos_svg::svg;
@@ -71,18 +74,6 @@ pub async fn get_albums() -> Result<Vec<Album>, ServerFnError> {
     Ok(albums)
 }
 
-#[server(prefix = "/api", endpoint = "create_new_playlist")]
-pub async fn create_playlist() -> Result<Playlist, ServerFnError> {
-    use crate::app_state::AppState;
-    use crate::database::commands::playlists::create_playlist;
-
-    let state = use_context::<AppState>().expect("To have Found App State");
-
-    let playlist = create_playlist(&state.db).await?;
-
-    Ok(playlist)
-}
-
 #[component]
 pub fn CreateDropDown(
     playlist_rf: ReadSignal<bool>,
@@ -112,6 +103,8 @@ pub fn CreateDropDown(
     let song_list_source =
         use_context::<RwSignal<SongListSource>>().expect("To have found song list");
 
+    let playlists = expect_context::<Store<PlaylistsSource>>();
+
     view! {
         <div class=library::CreateDropDown>
             <button
@@ -131,18 +124,22 @@ pub fn CreateDropDown(
                     class=library::CreateDropDownOpt
                     on:click=move |_| {
                         set_show_dd.set(!show_dd.get());
-                        // Create a new Playlist and navigate to it
-                        let new_pl = OnceResource::new(create_playlist());
-
-                        // extract the value from reactive refresh signal
-                        // for use in effect wihtout creating infinite reactive loop
-                        let rf = playlist_rf.get();
-                        Effect::new(move |_| {
-                            if let Some(Ok(pl)) = new_pl.get() {
-                                song_list_source.set(SongListSource::Playlist(pl));
-                                set_playlist_rf.set(!rf);
-                            }
+                        let new_pl: RwSignal<Option<Playlist>> = RwSignal::new(None);
+                        playlists.update(move |list_source| {
+                            list_source.new_playlist(new_pl);
                         });
+                        // // Create a new Playlist and navigate to it
+                        // let new_pl = OnceResource::new(create_playlist());
+                        //
+                        // // extract the value from reactive refresh signal
+                        // // for use in effect wihtout creating infinite reactive loop
+                        // let rf = playlist_rf.get();
+                        // Effect::new(move |_| {
+                        //     if let Some(Ok(pl)) = new_pl.get() {
+                        //         song_list_source.set(SongListSource::Playlist(pl));
+                        //         set_playlist_rf.set(!rf);
+                        //     }
+                        // });
                     }
                 >
                     New Playlist
@@ -217,7 +214,7 @@ pub fn LibrarySidebar() -> impl IntoView {
 #[component]
 pub fn PlaylistList(_refresh: ReadSignal<bool>, tab_selection: ReadSignal<Tabs>) -> impl IntoView {
     let playlists =
-        use_context::<Store<PlaylistsSource2>>().expect("playlist source to have been registered");
+        use_context::<Store<PlaylistsSource>>().expect("playlist source to have been registered");
 
     view! {
         <Show when=move || tab_selection.get() == Tabs::Playlists>
