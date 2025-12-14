@@ -1,8 +1,7 @@
-use std::collections::HashMap;
+use std::sync::Arc;
 
 use crate::models::song::Song;
 use leptos::{logging::log, prelude::*, reactive::spawn_local};
-use reactive_stores::Store;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -44,6 +43,17 @@ async fn remove_track_sfn(playlist_id: i64, track: i64) -> Result<(), ServerFnEr
     let state = expect_context::<AppState>();
     remove_track(&state.db, &playlist_id, &track).await?;
     Ok(())
+}
+
+impl Default for Playlist {
+    fn default() -> Self {
+        Playlist {
+            id: i64::default(),
+            title: String::new(),
+            description: String::new(),
+            songs: vec![],
+        }
+    }
 }
 
 impl Playlist {
@@ -140,32 +150,63 @@ pub async fn create_playlist() -> Result<Playlist, ServerFnError> {
     Ok(playlist)
 }
 
-#[derive(Clone, Store, Serialize, Deserialize)]
-pub struct PlaylistsSource {
-    #[store(key: i64 = |list| list.id().clone())]
-    lists: Vec<Playlist>,
-    is_loaded: bool,
+#[server(prefix = "/api", endpoint = "get_playlists")]
+pub async fn get_playlists() -> Result<Vec<Playlist>, ServerFnError> {
+    use crate::app_state::AppState;
+    use crate::database::commands::playlists::get_playlists_info;
+
+    let state = use_context::<AppState>().expect("To have Found App State");
+
+    let playlists = get_playlists_info(&state.db).await?;
+
+    Ok(playlists)
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+pub struct PlaylistsSource {
+    lists: Arc<RwSignal<Vec<RwSignal<Playlist>>>>,
+}
 impl PlaylistsSource {
     pub fn new() -> Self {
-        Self {
-            lists: vec![],
-            is_loaded: false,
-        }
+        let playlists_res = OnceResource::new(get_playlists());
+
+        let new = Self {
+            lists: Arc::new(RwSignal::new(vec![])),
+        };
+
+        let lists = Arc::clone(&new.lists);
+
+        Effect::new(move |_| {
+            if let Some(Ok(l)) = playlists_res.get() {
+                lists.set(l.into_iter().map(|l| RwSignal::new(l)).collect());
+            }
+        });
+
+        new
     }
 
     /// creates a new playlist and optionally writes playlist
     /// to as provided signal
-    pub fn new_playlist(&mut self, new_playlist: RwSignal<Option<Playlist>>) {
+    pub fn new_playlist(&mut self, new_playlist: RwSignal<Playlist>) {
         let new_pl_res = OnceResource::new(create_playlist());
-        // TODO: get a method where I can modify self.lists
-        // from within an effect using a smart pointer of some kind
-        // Effect::new(move |_| {
-        //     if let Some(Ok(pl)) = new_pl_res.get() {
-        //         new_playlist.set(Some(pl.clone()));
-        //         self.lists.push(pl);
-        //     }
-        // });
+        let lists = Arc::clone(&self.lists);
+        Effect::new(move |_| {
+            if let Some(Ok(pl)) = new_pl_res.get() {
+                new_playlist.set(pl.clone());
+                lists.write().push(new_playlist);
+            }
+        });
+    }
+
+    pub fn lists(&self) -> RwSignal<Vec<RwSignal<Playlist>>> {
+        *self.lists
+    }
+
+    pub fn list(&self, playlist_id: &i64) -> RwSignal<Playlist> {
+        (*self.lists)
+            .get()
+            .into_iter()
+            .find(|l| &l.get().id() == playlist_id)
+            .unwrap()
     }
 }

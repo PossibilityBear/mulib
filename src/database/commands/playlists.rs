@@ -65,15 +65,20 @@ pub async fn add_tracks(
 ) -> Result<(), Error> {
     let mut tx = conn.db.begin().await?;
 
-    let mut track_num: i64 = sqlx::query_scalar(
+    let mut track_num: i64 = sqlx::query_scalar!(
         "
-        SELECT MAX(track_number) AS max_track
-        FROM PlaylistSongs
-        WHERE playlist_id = $1
-        GROUP BY playlist_id
+        SELECT COALESCE (
+            ( 
+                SELECT MAX(track_number) AS max_track
+                FROM PlaylistSongs
+                WHERE playlist_id = ?
+                GROUP BY playlist_id 
+            ),
+            0
+            )
         ",
+        list_id
     )
-    .bind(list_id)
     .fetch_one(&mut *tx)
     .await?;
 

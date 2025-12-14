@@ -6,17 +6,16 @@ use crate::{
     models::{
         album::Album,
         artist::Artist,
-        playlist::{Playlist, PlaylistsSource, PlaylistsSourceStoreFields},
+        playlist::{Playlist, PlaylistsSource},
         song::Song,
     },
 };
 use leptos::{
-    ev::{self, MouseEvent},
+    ev::MouseEvent,
     html::Div,
     prelude::{ServerFnError, *},
 };
-use leptos_use::{on_click_outside_with_options, use_event_listener, OnClickOutsideOptions};
-use reactive_stores::Store;
+use leptos_use::{on_click_outside_with_options, OnClickOutsideOptions};
 use stylance::import_crate_style;
 
 import_crate_style!(style, "./src/components/song_list/song_list.module.scss");
@@ -26,7 +25,7 @@ import_crate_style!(style, "./src/components/song_list/song_list.module.scss");
 pub enum SongListSource {
     Album(Album),
     Artist(Artist),
-    Playlist(Playlist),
+    Playlist(RwSignal<Playlist>),
     All,
 }
 
@@ -86,7 +85,7 @@ async fn song_source_helper(source: SongListSource) -> Result<Vec<Song>, ServerF
     match source {
         SongListSource::Album(album) => get_songs_by_album(album.id).await,
         SongListSource::Artist(artist) => get_songs_by_artist(artist.id).await,
-        SongListSource::Playlist(playlist) => get_playlist_songs(playlist.id()).await,
+        SongListSource::Playlist(playlist) => get_playlist_songs(playlist.get().id()).await,
         SongListSource::All => get_all_songs().await,
     }
 }
@@ -99,7 +98,7 @@ pub fn SongListTitleCard(source: RwSignal<SongListSource>) -> impl IntoView {
                 match source.get() {
                     SongListSource::Album(album) => view! {<BasicListTitleCard title=album.title/>}.into_any(),
                     SongListSource::Artist(artist) => view! {<BasicListTitleCard title=artist.name/>}.into_any(),
-                    SongListSource::Playlist(list) => view! {<PlaylistTitleCard playlist_id=list.id()/>}.into_any(),
+                    SongListSource::Playlist(list) => view! {<PlaylistTitleCard playlist=list/>}.into_any(),
                     SongListSource::All => view! {<BasicListTitleCard title="All Songs".to_string()/>}.into_any(),
                 }
             }}
@@ -206,6 +205,9 @@ pub fn SongList(source: RwSignal<SongListSource>) -> impl IntoView {
                 <Suspense
                     fallback=move || view!{ <p> {"Song Loading..."} </p>}
                     >
+                    // TODO: Because playlists can repeat songs
+                    // using song.id as the key doesn't work,
+                    // will need to use a track id for playlists at least
                     <For
                         each=move || {
                             if let Some(Ok(songs)) = songs_res.get() {
@@ -287,7 +289,49 @@ pub fn AddToPlaylistSubContext(
     set_show: WriteSignal<bool>,
     selected_songs: ReadSignal<Vec<Song>>,
 ) -> impl IntoView {
-    let playlists = expect_context::<Store<PlaylistsSource>>();
+    // options for resolving this are,
+    // 1. move RwSignal to wrap playlistSource (ugly becuase can't initialize
+    //    playlist source with code from playlist source impl without introducing
+    //    an extra layer of interior mutability or something)
+    //
+    //  This seems pretty bad and after playing around with it not worth
+    //  fully implementing to try it.
+
+    // 2. put playlist source in and Arc (Probably  the best option if it works?)
+
+    // let playlists = Arc::new(expect_context::<PlaylistsSource>());
+    // let pl2 = Arc::clone(&playlists);
+    //
+    // view! {
+    //     <div class=style::sub_context_menu>
+    //     {move || {
+    //         let lists = playlists.lists().get();
+    //         lists.into_iter().map(|list| {
+    //             let pl2 = Arc::clone(&pl2);
+    //             view!{
+    //                 <button
+    //                     class=style::context_menu
+    //                     on:click=move |_: MouseEvent| {
+    //                         (&pl2)
+    //                             .list(&list.get().id())
+    //                             .update(|set_list| set_list.add_songs(selected_songs.get()));
+    //                         set_show.set(false);
+    //                     }
+    //                 >
+    //                     {list.get().title().clone()}
+    //                 </button>
+    //             }
+    //         }).collect_view()
+    //     }}
+    //     </div>
+    // }
+
+    // Current Winner
+    // 3. use lists() access to RwSignal<Vec<Playlist>> manaually when a comp
+    //    needs access to all playlists and otherwise use list()
+    //    not bad but it means can't provide as much convenience in playlist source impl
+    //    although not sure convenience would be needed
+    let playlists = expect_context::<PlaylistsSource>();
     view! {
         <div class=style::sub_context_menu>
         {move || {
@@ -296,18 +340,12 @@ pub fn AddToPlaylistSubContext(
                 view!{
                     <button
                         class=style::context_menu
-                        on:click= move |_| {
-                            playlists.lists().update(|set_list| {
-                                for l in set_list {
-                                    if l.id() == list.id() {
-                                        l.add_songs(selected_songs.get())
-                                    }
-                                }
-                            });
+                        on:click=move |_| {
+                            list.update(|set_list| set_list.add_songs(selected_songs.get()));
                             set_show.set(false);
                         }
                     >
-                        {list.title().clone()}
+                        {list.get().title().clone()}
                     </button>
                 }
             }).collect_view()

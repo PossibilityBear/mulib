@@ -2,27 +2,14 @@ use crate::components::controls::controls::Controls;
 use crate::components::library::library::LibrarySidebar;
 use crate::components::queue::queue::{Queue, SongQueueContext};
 use crate::components::song_list::song_list::{SongList, SongListSource};
-use crate::models::playlist::{Playlist, PlaylistsSource, PlaylistsSourceStoreFields};
+use crate::models::playlist::PlaylistsSource;
 use leptos::prelude::*;
-use reactive_stores::Store;
 use stylance::import_crate_style;
 
 import_crate_style!(
     home_page,
     "./src/components/home_page/home_page.module.scss"
 );
-
-#[server(prefix = "/api", endpoint = "get_playlists")]
-pub async fn get_playlists() -> Result<Vec<Playlist>, ServerFnError> {
-    use crate::app_state::AppState;
-    use crate::database::commands::playlists::get_playlists_info;
-
-    let state = use_context::<AppState>().expect("To have Found App State");
-
-    let playlists = get_playlists_info(&state.db).await?;
-
-    Ok(playlists)
-}
 
 #[component]
 pub fn HomePage() -> impl IntoView {
@@ -35,25 +22,8 @@ pub fn HomePage() -> impl IntoView {
     provide_context(list_source);
 
     // define playlists context
-    let playlists = Store::new(PlaylistsSource::new());
+    let playlists = PlaylistsSource::new();
     provide_context(playlists);
-
-    // define action to load playlists from database
-    let load_playlists_action = Action::new(move |_: &()| async move {
-        if !playlists.is_loaded().get_untracked() {
-            if let Ok(lists) = get_playlists().await {
-                leptos::logging::log!("got playlists");
-                playlists.lists().set(lists);
-                playlists.is_loaded().set(true);
-            }
-        }
-    });
-
-    // Use action to load the playlist on component mount
-    Effect::new(move |_| {
-        leptos::logging::log!("loading playlists");
-        load_playlists_action.dispatch(());
-    });
 
     view! {
         <div class=home_page::container>
