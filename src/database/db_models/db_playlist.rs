@@ -1,8 +1,5 @@
-use std::collections::VecDeque;
-
-use sqlx::prelude::FromRow;
-
 use crate::models::playlist::Playlist;
+use sqlx::prelude::FromRow;
 
 #[derive(Debug, Clone, FromRow)]
 pub struct DbPlaylist {
@@ -21,4 +18,3 @@ impl Into<Playlist> for DbPlaylist {
         )
     }
 }
-

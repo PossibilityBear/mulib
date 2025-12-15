@@ -1,10 +1,9 @@
 use crate::{
     components::song_list::song_list::SongListSource,
-    models::playlist::{PlaylistsSource2, PlaylistsSource2StoreFields},
+    models::playlist::{Playlist, PlaylistsSource},
 };
 use leptos::{html, prelude::*};
 use leptos_svg::svg;
-use reactive_stores::Store;
 use stylance::import_crate_style;
 
 import_crate_style!(playlist, "./src/components/playlist/playlist.module.scss");
@@ -16,68 +15,46 @@ pub fn PlaylistCard(playlist_id: i64) -> impl IntoView {
     let list_source =
         use_context::<RwSignal<SongListSource>>().expect("To have found song list source context");
 
+    // unwrapping the resource gets should be safe in this component
+    // becuase in order for it to render, playlists already have to have loaded
     let playlists =
-        use_context::<Store<PlaylistsSource2>>().expect("To have found playlist source context");
-
-    //getter for making access less annoying
-    let playlist = move || {
-        playlists
-            .lists()
-            .get()
-            .into_iter()
-            .find(|list| list.id() == playlist_id)
-            .expect("To Have found this playlist")
-    };
+        use_context::<Resource<PlaylistsSource>>().expect("To have found playlist source context");
 
     view! {
         <div class=move || {
             if let SongListSource::Playlist(p) = list_source.get() {
-                if p.id() == playlist_id {
+                if p.get().id() == playlist_id {
                     return vec![playlist::PlaylistCard, playlist::Selected].join(" ")
                 }
             }
-            playlist::PlaylistCard.to_string()
-        }>
+            playlist::PlaylistCard.to_string() }>
             <div>
                 // Playlist Art
                 {svg!("./public/album-art-placeholder.svg", playlist::playlist_art_placeholder)}
             </div>
             <div class=playlist::TextColGroup> <p class=playlist::PlaylistName on:click=move |_| {
                         list_source.update(|ls| {
-                            *ls = SongListSource::Playlist(playlist());
+                            *ls = SongListSource::Playlist(playlists.get().unwrap().list(&playlist_id));
                         });
                     }
-                >{ move || playlist().title().clone()}</p>
+                >{ move || playlists.get().unwrap().list(&playlist_id).get().title().clone()}</p>
             </div>
         </div>
     }
 }
 
 #[component]
-pub fn PlaylistTitleCard(playlist_id: i64) -> impl IntoView {
+pub fn PlaylistTitleCard(playlist: RwSignal<Playlist>) -> impl IntoView {
     let (show_edit_dialog, set_show_edit_dialog) = signal(false);
-    let playlists =
-        use_context::<Store<PlaylistsSource2>>().expect("to have found playlists source");
-
     let title_node: NodeRef<html::Input> = NodeRef::new();
     let desc_node: NodeRef<html::Input> = NodeRef::new();
-
-    //getter for making access less annoying
-    let playlist = move || {
-        playlists
-            .lists()
-            .get()
-            .into_iter()
-            .find(|list| list.id() == playlist_id)
-            .expect("To Have found this playlist")
-    };
 
     view! {
         <>
         <div class=playlist::TitleCard>
             <div>
-                <h1> {move || playlist().title().clone()} </h1>
-                <p> {move || playlist().description().clone()} </p>
+                <h1> {move || playlist.get().title().clone()} </h1>
+                <p> {move || playlist.get().description().clone()} </p>
             </div>
             // button to open the edit dialog for playlist name, art, and description
             <button class=main::svg_button
@@ -96,7 +73,7 @@ pub fn PlaylistTitleCard(playlist_id: i64) -> impl IntoView {
                     <input id="title"
                         node_ref=title_node
                         class=playlist::TextInput
-                        value= move || playlist().title().clone()
+                        value= move || playlist.get().title().clone()
                     />
                 </div>
                 <div class=playlist::EditDialogInputGroup>
@@ -104,7 +81,7 @@ pub fn PlaylistTitleCard(playlist_id: i64) -> impl IntoView {
                     <input id="description"
                         node_ref=desc_node
                         class=playlist::TextInput
-                        value= move || playlist().description().clone()
+                        value= move || playlist.get().description().clone()
                     />
                 </div>
                 <div class=playlist::ExpandedGroup>
@@ -123,10 +100,8 @@ pub fn PlaylistTitleCard(playlist_id: i64) -> impl IntoView {
                                     .value();
 
                                 // update playlist info
-                                playlists.lists().update(|lists| {
-                                    lists.iter_mut()
-                                        .filter(|list| list.id() == playlist_id)
-                                        .for_each(|list| {list.set_info(Some(title_value.clone()), Some(desc_value.clone()));});
+                                playlist.update(|list| {
+                                        list.set_info(Some(title_value.clone()), Some(desc_value.clone()));
                                 });
 
                                 // close dialog

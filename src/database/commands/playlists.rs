@@ -57,36 +57,51 @@ pub async fn remove_track(conn: &DbConnection, list_id: &i64, track: &i64) -> Re
     Ok(())
 }
 
-pub async fn add_track(conn: &DbConnection, list_id: &i64, song_id: &i64) -> Result<(), Error> {
+/// adds a single track to the end of the playlist
+pub async fn add_tracks(
+    conn: &DbConnection,
+    list_id: &i64,
+    song_ids: &Vec<i64>,
+) -> Result<(), Error> {
     let mut tx = conn.db.begin().await?;
-    _ = sqlx::query! {
+
+    let mut track_num: i64 = sqlx::query_scalar!(
         "
-        WITH track AS (
-            SELECT Max(track_number) AS max_track
-            FROM PlaylistSongs
-            WHERE playlist_id = ?
-            GROUP BY playlist_id
-        )
-        INSERT INTO PlaylistSongs (
-            playlist_id,
-            song_id,
-            track_number
-        )
-        SELECT 
-            ?,
-            ?,
-            track.max_track + 1
-        FROM track
+        SELECT COALESCE (
+            ( 
+                SELECT MAX(track_number) AS max_track
+                FROM PlaylistSongs
+                WHERE playlist_id = ?
+                GROUP BY playlist_id 
+            ),
+            0
+            )
         ",
-        list_id,
-        list_id,
-        song_id
-    }
-    .execute(&mut *tx)
+        list_id
+    )
+    .fetch_one(&mut *tx)
     .await?;
 
-    tx.commit().await?;
+    for s_id in song_ids {
+        track_num += 1;
+        _ = sqlx::query! {
+            "
+            INSERT INTO PlaylistSongs (
+                playlist_id,
+                song_id,
+                track_number
+            )
+            VALUES (?,?,?)
+            ",
+            list_id,
+            s_id,
+            track_num
+        }
+        .execute(&mut *tx)
+        .await?;
+    }
 
+    tx.commit().await?;
     Ok(())
 }
 

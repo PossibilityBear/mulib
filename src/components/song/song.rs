@@ -7,12 +7,11 @@ use crate::{
 };
 use leptos::{
     ev::{self, MouseEvent},
-    html::Div,
     leptos_dom::logging::console_log,
     prelude::*,
 };
 use leptos_svg::svg;
-use leptos_use::{on_click_outside_with_options, use_event_listener, OnClickOutsideOptions};
+use leptos_use::use_event_listener;
 use stylance::import_crate_style;
 
 import_crate_style!(song, "./src/components/song/song.module.scss");
@@ -39,30 +38,12 @@ pub fn Song(
         .into();
     let (song, _) = signal(song);
 
-    // let (show_context, set_show_context) = signal(false);
-    // let (context_xy, set_context_xy) = signal((0, 0));
-
     let song_card_ref = NodeRef::new();
+    #[allow(unused_must_use)] // silence SSR warn, binds event listener on csr only
     use_event_listener(song_card_ref, ev::contextmenu, move |evt| {
         evt.prevent_default();
-        leptos::logging::log!("Hello from local context menu event");
         on_context(evt)
     });
-
-    // Effect::new(move |_| {
-    //     // silence error from server side since this is a no-op on
-    //     // server side it never gets used and that's okay.
-    //     #[allow(unused_must_use)]
-    //     on_click_outside_with_options(
-    //         song_card_ref,
-    //         move |_| {
-    //             if show_context.get() {
-    //                 set_show_context.set(false);
-    //             }
-    //         },
-    //         OnClickOutsideOptions::default(), //.ignore(["#CreateDropDownButton"]),
-    //     );
-    // });
 
     let is_play_now = actions.contains(&SongAction::PlayNow);
     let play_now = move |_| {

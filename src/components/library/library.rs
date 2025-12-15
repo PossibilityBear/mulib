@@ -4,13 +4,11 @@ use crate::components::song_list::song_list::SongListSource;
 use crate::models::album::Album;
 use crate::models::artist::Artist;
 use crate::models::playlist::Playlist;
-use crate::models::playlist::PlaylistsSource2StoreFields;
-use crate::{components::album::album::AlbumCard, models::playlist::PlaylistsSource2};
+use crate::{components::album::album::AlbumCard, models::playlist::PlaylistsSource};
 use leptos::html::Div;
 use leptos::prelude::*;
 use leptos_svg::svg;
 use leptos_use::{on_click_outside_with_options, OnClickOutsideOptions};
-use reactive_stores::Store;
 use stylance::import_crate_style;
 
 import_crate_style!(library, "./src/components/library/library.module.scss");
@@ -71,23 +69,8 @@ pub async fn get_albums() -> Result<Vec<Album>, ServerFnError> {
     Ok(albums)
 }
 
-#[server(prefix = "/api", endpoint = "create_new_playlist")]
-pub async fn create_playlist() -> Result<Playlist, ServerFnError> {
-    use crate::app_state::AppState;
-    use crate::database::commands::playlists::create_playlist;
-
-    let state = use_context::<AppState>().expect("To have Found App State");
-
-    let playlist = create_playlist(&state.db).await?;
-
-    Ok(playlist)
-}
-
 #[component]
-pub fn CreateDropDown(
-    playlist_rf: ReadSignal<bool>,
-    set_playlist_rf: WriteSignal<bool>,
-) -> impl IntoView {
+pub fn CreateDropDown() -> impl IntoView {
     let (show_dd, set_show_dd) = signal(false);
 
     let dd_ref = NodeRef::<Div>::new();
@@ -112,6 +95,8 @@ pub fn CreateDropDown(
     let song_list_source =
         use_context::<RwSignal<SongListSource>>().expect("To have found song list");
 
+    let playlists = expect_context::<Resource<PlaylistsSource>>();
+
     view! {
         <div class=library::CreateDropDown>
             <button
@@ -127,26 +112,21 @@ pub fn CreateDropDown(
                 style=move || {if !show_dd.get() {"visibility: hidden"} else {""}}
                 node_ref=dd_ref
             >
-                <button
-                    class=library::CreateDropDownOpt
-                    on:click=move |_| {
-                        set_show_dd.set(!show_dd.get());
-                        // Create a new Playlist and navigate to it
-                        let new_pl = OnceResource::new(create_playlist());
-
-                        // extract the value from reactive refresh signal
-                        // for use in effect wihtout creating infinite reactive loop
-                        let rf = playlist_rf.get();
-                        Effect::new(move |_| {
-                            if let Some(Ok(pl)) = new_pl.get() {
-                                song_list_source.set(SongListSource::Playlist(pl));
-                                set_playlist_rf.set(!rf);
+                <Suspense>
+                    <button
+                        class=library::CreateDropDownOpt
+                        on:click=move |_| {
+                            set_show_dd.set(!show_dd.get());
+                            let new_pl = RwSignal::new(Playlist::default());
+                            if let Some(mut pls) = playlists.get() {
+                                pls.new_playlist(new_pl);
                             }
-                        });
-                    }
-                >
-                    New Playlist
-                </button>
+                            song_list_source.set(SongListSource::Playlist(new_pl));
+                        }
+                    >
+                        New Playlist
+                    </button>
+                </Suspense>
                 <button
                     class=library::CreateDropDownOpt
                     on:click=move |_| {
@@ -169,13 +149,12 @@ pub fn LibrarySidebar() -> impl IntoView {
 
     let list_source =
         use_context::<RwSignal<SongListSource>>().expect("To have found song list source context");
-    let (playlist_rf, set_playlist_rf) = signal(false);
 
     view! {
         <div class=library::LibContainer>
             <div class=library::HeaderRow>
                 <h1 class=library::Title> Library </h1>
-                <CreateDropDown playlist_rf set_playlist_rf/>
+                <CreateDropDown/>
                 <button class=library::AllSongs
                     on:click=move |_| {
                         list_source.set(SongListSource::All);
@@ -190,51 +169,42 @@ pub fn LibrarySidebar() -> impl IntoView {
                 <TabSelector tab=Tabs::Playlists tab_selection=tab_selection/>
             </div>
             <div class=library::ListContainer>
-                <ArtistList tab_selection=tab_selection.read_only()/>
-                <AlbumList tab_selection=tab_selection.read_only()/>
-                <PlaylistList _refresh=playlist_rf tab_selection=tab_selection.read_only()/>
-
                 // For some reason trying to control visibility
                 // of components with For gets weird non-fatal errors
                 // instead just pass the signal to each component
                 // for it to decide if it should render.
-
-                // Now there is an issue where it doesn't reload
-                // library list ever.
-                // Now there is an issue where it doesn't reload
-                // library list ever.
-
-                // {move || {match tab_selection.get() {
-                //     Tabs::Playlists => view!{ <AlbumList/> }.into_any(),
-                //     Tabs::Albums => view!{ <AlbumList/> }.into_any(),
-                //     Tabs::Artists => view!{ <AlbumList/> }.into_any(),
-                // }}}
+                <ArtistList tab_selection=tab_selection.read_only()/>
+                <AlbumList tab_selection=tab_selection.read_only()/>
+                <PlaylistList tab_selection=tab_selection.read_only()/>
             </div>
         </div>
     }
 }
 
 #[component]
-pub fn PlaylistList(_refresh: ReadSignal<bool>, tab_selection: ReadSignal<Tabs>) -> impl IntoView {
-    let playlists =
-        use_context::<Store<PlaylistsSource2>>().expect("playlist source to have been registered");
+pub fn PlaylistList(tab_selection: ReadSignal<Tabs>) -> impl IntoView {
+    let playlists = use_context::<Resource<PlaylistsSource>>()
+        .expect("playlist source to have been registered");
 
     view! {
         <Show when=move || tab_selection.get() == Tabs::Playlists>
         <Suspense
             fallback=move || view!{<p> {"loading..."}</p>}
         >
-            <For
-                each=move || {playlists.lists()}
-                key=|playlist| {playlist.read().id().clone()}
-                children=move |playlist| {
-                    view!{
-                        <div>
-                            <PlaylistCard playlist_id=playlist.read().id()/>
-                        </div>
+            <Show when= move || playlists.get().is_some()>
+                <For
+                    // unwrap checked by <Show/>
+                    each=move || {playlists.get().unwrap().lists().get()}
+                    key=move |playlist| {playlist.get().id().clone()}
+                    children=move |playlist| {
+                        view!{
+                            <div>
+                                <PlaylistCard playlist_id=playlist.read().id()/>
+                            </div>
+                        }
                     }
-                }
-            />
+                />
+            </Show>
         </Suspense>
         </Show>
     }

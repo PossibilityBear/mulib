@@ -3,14 +3,19 @@ use crate::{
         playlist::playlist::PlaylistTitleCard,
         song::song::{Song, SongAction},
     },
-    models::{album::Album, artist::Artist, playlist::Playlist, song::Song},
+    models::{
+        album::Album,
+        artist::Artist,
+        playlist::{Playlist, PlaylistsSource},
+        song::Song,
+    },
 };
 use leptos::{
-    ev::{self, MouseEvent},
+    ev::MouseEvent,
     html::Div,
     prelude::{ServerFnError, *},
 };
-use leptos_use::{on_click_outside_with_options, use_event_listener, OnClickOutsideOptions};
+use leptos_use::{on_click_outside_with_options, OnClickOutsideOptions};
 use stylance::import_crate_style;
 
 import_crate_style!(style, "./src/components/song_list/song_list.module.scss");
@@ -20,7 +25,7 @@ import_crate_style!(style, "./src/components/song_list/song_list.module.scss");
 pub enum SongListSource {
     Album(Album),
     Artist(Artist),
-    Playlist(Playlist),
+    Playlist(RwSignal<Playlist>),
     All,
 }
 
@@ -32,18 +37,6 @@ pub async fn get_all_songs() -> Result<Vec<Song>, ServerFnError> {
     let state = use_context::<AppState>().expect("To Have Found App State");
 
     let songs = get_all_songs(&state.db).await?;
-
-    Ok(songs)
-}
-
-#[server(prefix = "/api", endpoint = "get_playlist_songs")]
-pub async fn get_playlist_songs(playlist_id: i64) -> Result<Vec<Song>, ServerFnError> {
-    use crate::app_state::AppState;
-    use crate::database::commands::playlists::get_playlist_songs;
-
-    let state = use_context::<AppState>().expect("To Have Found App State");
-
-    let songs = get_playlist_songs(&state.db, &playlist_id).await?;
 
     Ok(songs)
 }
@@ -80,7 +73,9 @@ async fn song_source_helper(source: SongListSource) -> Result<Vec<Song>, ServerF
     match source {
         SongListSource::Album(album) => get_songs_by_album(album.id).await,
         SongListSource::Artist(artist) => get_songs_by_artist(artist.id).await,
-        SongListSource::Playlist(playlist) => get_playlist_songs(playlist.id()).await,
+        SongListSource::Playlist(playlist) => {
+            playlist.get().load_songs().await.map(|songs| songs.clone())
+        }
         SongListSource::All => get_all_songs().await,
     }
 }
@@ -93,7 +88,7 @@ pub fn SongListTitleCard(source: RwSignal<SongListSource>) -> impl IntoView {
                 match source.get() {
                     SongListSource::Album(album) => view! {<BasicListTitleCard title=album.title/>}.into_any(),
                     SongListSource::Artist(artist) => view! {<BasicListTitleCard title=artist.name/>}.into_any(),
-                    SongListSource::Playlist(list) => view! {<PlaylistTitleCard playlist_id=list.id()/>}.into_any(),
+                    SongListSource::Playlist(list) => view! {<PlaylistTitleCard playlist=list/>}.into_any(),
                     SongListSource::All => view! {<BasicListTitleCard title="All Songs".to_string()/>}.into_any(),
                 }
             }}
@@ -121,7 +116,6 @@ pub fn SongList(source: RwSignal<SongListSource>) -> impl IntoView {
         let song_list = song_list.clone();
         move |ev: MouseEvent| {
             if ev.shift_key() {
-                leptos::logging::log!("Shift Clicked");
                 // find the previously selected item if any,
                 if let Some(last_sel) = selected_songs.get().iter().last() {
                     // then select throught the range
@@ -154,26 +148,23 @@ pub fn SongList(source: RwSignal<SongListSource>) -> impl IntoView {
                     set_selected_songs.set(vec![song.clone()]);
                 }
             } else if ev.ctrl_key() {
-                leptos::logging::log!("ctrl clicked");
                 set_selected_songs.update(|songs| songs.push(song.clone()));
             } else {
                 set_selected_songs.set(vec![song.clone()]);
             }
-
-            for song in selected_songs.get() {
-                leptos::logging::log!("Song name {}", song.title)
-            }
         }
     };
 
-    let (show_context, set_show_context) = signal(false);
+    let show_context = RwSignal::new(false);
     let (context_xy, set_context_xy) = signal((0, 0));
 
-    let on_contextmenu = move |evt: MouseEvent| {
-        evt.prevent_default();
-        leptos::logging::log!("Hello from context menu event");
-        set_show_context.set(true);
-        set_context_xy.set((evt.client_x(), evt.client_y()))
+    let on_contextmenu = move |song_list: Vec<Song>, song: Song| {
+        move |evt: MouseEvent| {
+            select_song(song_list.clone(), song.clone())(evt.clone());
+            evt.prevent_default();
+            show_context.set(true);
+            set_context_xy.set((evt.client_x(), evt.client_y()))
+        }
     };
 
     let context_menu_ref = NodeRef::<Div>::new();
@@ -186,7 +177,7 @@ pub fn SongList(source: RwSignal<SongListSource>) -> impl IntoView {
             context_menu_ref,
             move |_| {
                 if show_context.get() {
-                    set_show_context.set(false);
+                    show_context.set(false);
                 }
             },
             OnClickOutsideOptions::default(), //.ignore(["#CreateDropDownButton"]),
@@ -200,6 +191,9 @@ pub fn SongList(source: RwSignal<SongListSource>) -> impl IntoView {
                 <Suspense
                     fallback=move || view!{ <p> {"Song Loading..."} </p>}
                     >
+                    // TODO: Because playlists can repeat songs
+                    // using song.id as the key doesn't work,
+                    // will need to use a track id for playlists at least
                     <For
                         each=move || {
                             if let Some(Ok(songs)) = songs_res.get() {
@@ -218,7 +212,7 @@ pub fn SongList(source: RwSignal<SongListSource>) -> impl IntoView {
                                 <Song song=song.clone()
                                     actions={vec![SongAction::PlayNow, SongAction::AddToQueue]}
                                     on_select=select_song(songs_res.get().unwrap().unwrap(), song.clone())
-                                    on_context=on_contextmenu
+                                    on_context=on_contextmenu(songs_res.get().unwrap().unwrap(), song.clone())
                                     is_selected=Memo::new(move |_| {
                                         selected_songs.get().contains(&song.clone())
                                     })
@@ -230,9 +224,10 @@ pub fn SongList(source: RwSignal<SongListSource>) -> impl IntoView {
             </div>
             <Show when=move || show_context.get()>
                 <SongContextMenu
-                    set_show=set_show_context
+                    set_show=show_context
                     xy_coords=context_xy
                     node_ref=context_menu_ref
+                    selected_songs=selected_songs
                 />
             </Show>
         </>
@@ -243,25 +238,68 @@ pub fn SongList(source: RwSignal<SongListSource>) -> impl IntoView {
 pub fn SongContextMenu(
     xy_coords: ReadSignal<(i32, i32)>,
     node_ref: NodeRef<Div>,
-    set_show: WriteSignal<bool>,
+    set_show: RwSignal<bool>,
+    selected_songs: ReadSignal<Vec<Song>>,
 ) -> impl IntoView {
+    let (add_to_playlist, set_add_to_playlist) = signal(false);
     view! {
         <div class=style::context_menu
             node_ref=node_ref
             style=move || {format!("left: {}px; top: {}px;", xy_coords.get().0, xy_coords.get().1)}
         >
-            <button
-                class=style::context_menu
-                on:click= move |_| { set_show.set(false); }
-            >
-                Add to Queue
-            </button>
-            <button
-                class=style::context_menu
-                on:click= move |_| { set_show.set(false); }
-            >
-                Add to Playlist
-            </button>
+            <div class=style::sub_context_menu>
+                <button
+                    class=style::context_menu
+                    on:click= move |_| {
+                        set_show.set(false);
+                    }
+                >
+                    Add to Queue
+                </button>
+                <button
+                    class=style::context_menu
+                    on:click= move |_| { set_add_to_playlist.set(true); }
+                >
+                    Add to Playlist
+                </button>
+            </div>
+            <Show when=move || add_to_playlist.get()>
+                <AddToPlaylistSubContext set_show=set_show.write_only() selected_songs/>
+            </Show>
+        </div>
+    }
+}
+
+#[component]
+pub fn AddToPlaylistSubContext(
+    set_show: WriteSignal<bool>,
+    selected_songs: ReadSignal<Vec<Song>>,
+) -> impl IntoView {
+    let playlists = expect_context::<Resource<PlaylistsSource>>();
+    view! {
+        <div class=style::sub_context_menu>
+        <Suspense>
+            {move || {
+                if let Some(pls) = playlists.get() {
+                    let lists = pls.lists().get();
+                    lists.into_iter().map(|list| {
+                        view!{
+                            <button
+                                class=style::context_menu
+                                on:click=move |_| {
+                                    list.update(|set_list| set_list.add_songs(selected_songs.get()));
+                                    set_show.set(false);
+                                }
+                            >
+                                {list.get().title().clone()}
+                            </button>
+                        }
+                    }).collect_view().into_any()
+                } else {
+                    view!{}.into_any()
+                }
+            }}
+        </Suspense>
         </div>
     }
 }

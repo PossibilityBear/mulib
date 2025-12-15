@@ -27,12 +27,8 @@ h1.SongListSourceTitle {
 div.context_menu {
   position: absolute;
   display: flex;
-  flex-direction: column;
-  row-gap: 10px;
-  background-color: colors.$MidDark;
-  border-radius: sizes.$BorderRadius;
-  width: 12%;
-  padding: 20px;
+  flex-direction: row;
+  width: 30%;
 }
 
 
@@ -49,4 +45,16 @@ button.context_menu {
 
 button.context_menu:hover {
   background-color: colors.$Mid;
+}
+
+div.sub_context_menu {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  row-gap: 10px;
+  background-color: colors.$MidDark;
+  width: 50%;
+  height: fit-content;
+  padding: 20px;
+  box-shadow: -2px 2px 8px colors.$Darker;
 }
