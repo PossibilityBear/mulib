@@ -5,8 +5,6 @@ use leptos::{logging::log, prelude::*, reactive::spawn_local};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-/// A playlist is a collection of songs with some metadata
-/// such as a title, description, etc...
 pub struct Playlist {
     id: i64,
     title: String,
@@ -58,18 +56,6 @@ impl Default for Playlist {
     }
 }
 
-#[server(prefix = "/api", endpoint = "get_playlist_songs")]
-pub async fn get_songs_sfn(playlist_id: i64) -> Result<Vec<Song>, ServerFnError> {
-    use crate::app_state::AppState;
-    use crate::database::commands::playlists::get_playlist_songs;
-
-    let state = use_context::<AppState>().expect("To Have Found App State");
-
-    let songs = get_playlist_songs(&state.db, &playlist_id).await?;
-
-    Ok(songs)
-}
-
 impl Playlist {
     /// create a new playlist
     pub fn new(id: i64, title: String, description: String, songs: Vec<Song>) -> Self {
@@ -113,23 +99,7 @@ impl Playlist {
         });
     }
 
-    /// Loads songs from database into this playlist
-    /// can be called from a Resource to also get the result
-    /// or from an action if the goal is only to load the songs
-    /// into the struct
-    pub async fn load_songs<'a>(&'a mut self) -> Result<&'a Vec<Song>, ServerFnError> {
-        match get_songs_sfn(self.id).await {
-            Ok(songs) => {
-                self.songs = songs;
-                return Ok(&self.songs);
-            }
-            Err(e) => Err(e),
-        }
-    }
-
     /// get a reference to the set of songs for this playlist
-    /// NOTE: this *Does Not* load the songs from the database
-    /// it only returns the songs in from the in memory struct
     pub fn get_songs<'a>(&'a self) -> &'a Vec<Song> {
         &self.songs
     }
@@ -194,50 +164,35 @@ pub async fn get_playlists() -> Result<Vec<Playlist>, ServerFnError> {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct PlaylistsSource {
-    lists: Arc<RwSignal<Vec<RwSignal<Playlist>>>>,
+    refresh: Arc<RwSignal<bool>>,
 }
+
+/// a resource wrapping a vec of playlists, for use as context
+pub type PlaylistSourceRes = Resource<Result<Vec<Playlist>, ServerFnError>>;
+
 impl PlaylistsSource {
-    pub fn new() -> Self {
-        let playlists_res = OnceResource::new(get_playlists());
-
-        let new = Self {
-            lists: Arc::new(RwSignal::new(vec![])),
+    /// Provides context of type `PlaylistSourceRes`
+    pub fn provide_context() {
+        let this = Self {
+            refresh: Arc::new(RwSignal::new(false)),
         };
-
-        let lists = Arc::clone(&new.lists);
-
-        Effect::new(move |_| {
-            if let Some(Ok(l)) = playlists_res.get() {
-                lists.set(l.into_iter().map(|l| RwSignal::new(l)).collect());
-            }
-        });
-
-        new
+        provide_context(Resource::new(
+            move || this.refresh.get(),
+            |_| get_playlists(),
+        ));
     }
 
-    /// creates a new playlist and writes the new playlist to provided signal
-    pub fn new_playlist(&mut self, new_playlist: RwSignal<Playlist>) {
+    /// Creates a new playlist and writes the id to a provided signal
+    /// when the playlist has been created to use for redirecting
+    /// to the new playlist
+    pub fn new_playlist(&mut self, new_playlist_id: RwSignal<i64>) {
         let new_pl_res = OnceResource::new(create_playlist());
-        let lists = Arc::clone(&self.lists);
+        let rf_clone = Arc::clone(&self.refresh);
         Effect::new(move |_| {
             if let Some(Ok(pl)) = new_pl_res.get() {
-                new_playlist.set(pl.clone());
-                lists.write().push(new_playlist);
+                new_playlist_id.set(pl.id());
+                rf_clone.set(!rf_clone.get());
             }
         });
-    }
-
-    /// Get the set of playlists from this source
-    pub fn lists(&self) -> RwSignal<Vec<RwSignal<Playlist>>> {
-        *self.lists
-    }
-
-    /// Get a single playlist from this source
-    pub fn list(&self, playlist_id: &i64) -> RwSignal<Playlist> {
-        (*self.lists)
-            .get()
-            .into_iter()
-            .find(|l| &l.get().id() == playlist_id)
-            .unwrap()
     }
 }

@@ -41,18 +41,6 @@ pub async fn get_all_songs() -> Result<Vec<Song>, ServerFnError> {
     Ok(songs)
 }
 
-#[server(prefix = "/api", endpoint = "get_playlist_songs")]
-pub async fn get_playlist_songs(playlist_id: i64) -> Result<Vec<Song>, ServerFnError> {
-    use crate::app_state::AppState;
-    use crate::database::commands::playlists::get_playlist_songs;
-
-    let state = use_context::<AppState>().expect("To Have Found App State");
-
-    let songs = get_playlist_songs(&state.db, &playlist_id).await?;
-
-    Ok(songs)
-}
-
 #[server(prefix = "/api", endpoint = "get_songs_by_artist")]
 pub async fn get_songs_by_artist(artist_id: i64) -> Result<Vec<Song>, ServerFnError> {
     use crate::app_state::AppState;
@@ -85,7 +73,9 @@ async fn song_source_helper(source: SongListSource) -> Result<Vec<Song>, ServerF
     match source {
         SongListSource::Album(album) => get_songs_by_album(album.id).await,
         SongListSource::Artist(artist) => get_songs_by_artist(artist.id).await,
-        SongListSource::Playlist(playlist) => get_playlist_songs(playlist.get().id()).await,
+        SongListSource::Playlist(playlist) => {
+            playlist.get().load_songs().await.map(|songs| songs.clone())
+        }
         SongListSource::All => get_all_songs().await,
     }
 }
@@ -289,48 +279,6 @@ pub fn AddToPlaylistSubContext(
     set_show: WriteSignal<bool>,
     selected_songs: ReadSignal<Vec<Song>>,
 ) -> impl IntoView {
-    // options for resolving this are,
-    // 1. move RwSignal to wrap playlistSource (ugly becuase can't initialize
-    //    playlist source with code from playlist source impl without introducing
-    //    an extra layer of interior mutability or something)
-    //
-    //  This seems pretty bad and after playing around with it not worth
-    //  fully implementing to try it.
-
-    // 2. put playlist source in and Arc (Probably  the best option if it works?)
-
-    // let playlists = Arc::new(expect_context::<PlaylistsSource>());
-    // let pl2 = Arc::clone(&playlists);
-    //
-    // view! {
-    //     <div class=style::sub_context_menu>
-    //     {move || {
-    //         let lists = playlists.lists().get();
-    //         lists.into_iter().map(|list| {
-    //             let pl2 = Arc::clone(&pl2);
-    //             view!{
-    //                 <button
-    //                     class=style::context_menu
-    //                     on:click=move |_: MouseEvent| {
-    //                         (&pl2)
-    //                             .list(&list.get().id())
-    //                             .update(|set_list| set_list.add_songs(selected_songs.get()));
-    //                         set_show.set(false);
-    //                     }
-    //                 >
-    //                     {list.get().title().clone()}
-    //                 </button>
-    //             }
-    //         }).collect_view()
-    //     }}
-    //     </div>
-    // }
-
-    // Current Winner
-    // 3. use lists() access to RwSignal<Vec<Playlist>> manaually when a comp
-    //    needs access to all playlists and otherwise use list()
-    //    not bad but it means can't provide as much convenience in playlist source impl
-    //    although not sure convenience would be needed
     let playlists = expect_context::<PlaylistsSource>();
     view! {
         <div class=style::sub_context_menu>
