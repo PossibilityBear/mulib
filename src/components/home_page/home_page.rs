@@ -22,8 +22,8 @@ pub fn HomePage() -> impl IntoView {
     provide_context(list_source);
 
     // define playlists context
-    let playlists = PlaylistsSource::new();
-    provide_context(playlists);
+    let playlists_res = Resource::new(|| {}, |_| PlaylistsSource::new());
+    provide_context(playlists_res);
 
     view! {
         <div class=home_page::container>

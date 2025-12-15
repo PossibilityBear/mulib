@@ -15,10 +15,10 @@ pub fn PlaylistCard(playlist_id: i64) -> impl IntoView {
     let list_source =
         use_context::<RwSignal<SongListSource>>().expect("To have found song list source context");
 
+    // unwrapping the resource gets should be safe in this component
+    // becuase in order for it to render, playlists already have to have loaded
     let playlists =
-        use_context::<PlaylistsSource>().expect("To have found playlist source context");
-
-    let pl2 = playlists.clone();
+        use_context::<Resource<PlaylistsSource>>().expect("To have found playlist source context");
 
     view! {
         <div class=move || {
@@ -34,10 +34,10 @@ pub fn PlaylistCard(playlist_id: i64) -> impl IntoView {
             </div>
             <div class=playlist::TextColGroup> <p class=playlist::PlaylistName on:click=move |_| {
                         list_source.update(|ls| {
-                            *ls = SongListSource::Playlist(playlists.list(&playlist_id));
+                            *ls = SongListSource::Playlist(playlists.get().unwrap().list(&playlist_id));
                         });
                     }
-                >{ move || pl2.list(&playlist_id).get().title().clone()}</p>
+                >{ move || playlists.get().unwrap().list(&playlist_id).get().title().clone()}</p>
             </div>
         </div>
     }

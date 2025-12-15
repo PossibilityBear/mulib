@@ -279,24 +279,28 @@ pub fn AddToPlaylistSubContext(
     set_show: WriteSignal<bool>,
     selected_songs: ReadSignal<Vec<Song>>,
 ) -> impl IntoView {
-    let playlists = expect_context::<PlaylistsSource>();
+    let playlists = expect_context::<Resource<PlaylistsSource>>();
     view! {
         <div class=style::sub_context_menu>
         {move || {
-            let lists = playlists.lists().get();
-            lists.into_iter().map(|list| {
-                view!{
-                    <button
-                        class=style::context_menu
-                        on:click=move |_| {
-                            list.update(|set_list| set_list.add_songs(selected_songs.get()));
-                            set_show.set(false);
-                        }
-                    >
-                        {list.get().title().clone()}
-                    </button>
-                }
-            }).collect_view()
+            if let Some(pls) = playlists.get() {
+                let lists = pls.lists().get();
+                lists.into_iter().map(|list| {
+                    view!{
+                        <button
+                            class=style::context_menu
+                            on:click=move |_| {
+                                list.update(|set_list| set_list.add_songs(selected_songs.get()));
+                                set_show.set(false);
+                            }
+                        >
+                            {list.get().title().clone()}
+                        </button>
+                    }
+                }).collect_view().into_any()
+            } else {
+                view!{}.into_any()
+            }
         }}
         </div>
     }

@@ -95,7 +95,7 @@ pub fn CreateDropDown() -> impl IntoView {
     let song_list_source =
         use_context::<RwSignal<SongListSource>>().expect("To have found song list");
 
-    let mut playlists = expect_context::<PlaylistsSource>();
+    let mut playlists = expect_context::<Resource<PlaylistsSource>>();
 
     view! {
         <div class=library::CreateDropDown>
@@ -117,7 +117,9 @@ pub fn CreateDropDown() -> impl IntoView {
                     on:click=move |_| {
                         set_show_dd.set(!show_dd.get());
                         let new_pl = RwSignal::new(Playlist::default());
-                        playlists.new_playlist(new_pl);
+                        if let Some(mut pls) = playlists.get() {
+                            pls.new_playlist(new_pl);
+                        }
                         song_list_source.set(SongListSource::Playlist(new_pl));
                     }
                 >
@@ -179,26 +181,28 @@ pub fn LibrarySidebar() -> impl IntoView {
 
 #[component]
 pub fn PlaylistList(tab_selection: ReadSignal<Tabs>) -> impl IntoView {
-    let playlists = use_context::<PlaylistsSource>()
-        .expect("playlist source to have been registered")
-        .lists();
+    let playlists = use_context::<Resource<PlaylistsSource>>()
+        .expect("playlist source to have been registered");
 
     view! {
         <Show when=move || tab_selection.get() == Tabs::Playlists>
         <Suspense
             fallback=move || view!{<p> {"loading..."}</p>}
         >
-            <For
-                each=move || {playlists.get()}
-                key=move |playlist| {playlist.get().id().clone()}
-                children=move |playlist| {
-                    view!{
-                        <div>
-                            <PlaylistCard playlist_id=playlist.read().id()/>
-                        </div>
+            <Show when= move || playlists.get().is_some()>
+                <For
+                    // unwrap checked by <Show/>
+                    each=move || {playlists.get().unwrap().lists().get()}
+                    key=move |playlist| {playlist.get().id().clone()}
+                    children=move |playlist| {
+                        view!{
+                            <div>
+                                <PlaylistCard playlist_id=playlist.read().id()/>
+                            </div>
+                        }
                     }
-                }
-            />
+                />
+            </Show>
         </Suspense>
         </Show>
     }

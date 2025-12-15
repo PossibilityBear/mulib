@@ -197,22 +197,24 @@ pub struct PlaylistsSource {
     lists: Arc<RwSignal<Vec<RwSignal<Playlist>>>>,
 }
 impl PlaylistsSource {
-    pub fn new() -> Self {
-        let playlists_res = OnceResource::new(get_playlists());
+    // asycn initialization to be setup inside a resouce to take advantage
+    // of <Suspense/> component breaks durring SSR to load playlists from DB
+    pub async fn new() -> Self {
+        let playlists_res = get_playlists().await;
 
-        let new = Self {
-            lists: Arc::new(RwSignal::new(vec![])),
-        };
-
-        let lists = Arc::clone(&new.lists);
-
-        Effect::new(move |_| {
-            if let Some(Ok(l)) = playlists_res.get() {
-                lists.set(l.into_iter().map(|l| RwSignal::new(l)).collect());
+        match playlists_res {
+            Ok(lists) => Self {
+                lists: Arc::new(RwSignal::new(
+                    lists.into_iter().map(|list| RwSignal::new(list)).collect(),
+                )),
+            },
+            Err(e) => {
+                leptos::logging::log!("Error while loading playlists: {:?}", e);
+                Self {
+                    lists: Arc::new(RwSignal::new(vec![])),
+                }
             }
-        });
-
-        new
+        }
     }
 
     /// creates a new playlist and writes the new playlist to provided signal
