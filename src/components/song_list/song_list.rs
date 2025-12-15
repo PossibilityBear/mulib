@@ -116,7 +116,6 @@ pub fn SongList(source: RwSignal<SongListSource>) -> impl IntoView {
         let song_list = song_list.clone();
         move |ev: MouseEvent| {
             if ev.shift_key() {
-                leptos::logging::log!("Shift Clicked");
                 // find the previously selected item if any,
                 if let Some(last_sel) = selected_songs.get().iter().last() {
                     // then select throught the range
@@ -149,14 +148,9 @@ pub fn SongList(source: RwSignal<SongListSource>) -> impl IntoView {
                     set_selected_songs.set(vec![song.clone()]);
                 }
             } else if ev.ctrl_key() {
-                leptos::logging::log!("ctrl clicked");
                 set_selected_songs.update(|songs| songs.push(song.clone()));
             } else {
                 set_selected_songs.set(vec![song.clone()]);
-            }
-
-            for song in selected_songs.get() {
-                leptos::logging::log!("Song name {}", song.title)
             }
         }
     };
@@ -164,11 +158,13 @@ pub fn SongList(source: RwSignal<SongListSource>) -> impl IntoView {
     let show_context = RwSignal::new(false);
     let (context_xy, set_context_xy) = signal((0, 0));
 
-    let on_contextmenu = move |evt: MouseEvent| {
-        evt.prevent_default();
-        leptos::logging::log!("Hello from context menu event");
-        show_context.set(true);
-        set_context_xy.set((evt.client_x(), evt.client_y()))
+    let on_contextmenu = move |song_list: Vec<Song>, song: Song| {
+        move |evt: MouseEvent| {
+            select_song(song_list.clone(), song.clone())(evt.clone());
+            evt.prevent_default();
+            show_context.set(true);
+            set_context_xy.set((evt.client_x(), evt.client_y()))
+        }
     };
 
     let context_menu_ref = NodeRef::<Div>::new();
@@ -216,7 +212,7 @@ pub fn SongList(source: RwSignal<SongListSource>) -> impl IntoView {
                                 <Song song=song.clone()
                                     actions={vec![SongAction::PlayNow, SongAction::AddToQueue]}
                                     on_select=select_song(songs_res.get().unwrap().unwrap(), song.clone())
-                                    on_context=on_contextmenu
+                                    on_context=on_contextmenu(songs_res.get().unwrap().unwrap(), song.clone())
                                     is_selected=Memo::new(move |_| {
                                         selected_songs.get().contains(&song.clone())
                                     })
@@ -282,26 +278,28 @@ pub fn AddToPlaylistSubContext(
     let playlists = expect_context::<Resource<PlaylistsSource>>();
     view! {
         <div class=style::sub_context_menu>
-        {move || {
-            if let Some(pls) = playlists.get() {
-                let lists = pls.lists().get();
-                lists.into_iter().map(|list| {
-                    view!{
-                        <button
-                            class=style::context_menu
-                            on:click=move |_| {
-                                list.update(|set_list| set_list.add_songs(selected_songs.get()));
-                                set_show.set(false);
-                            }
-                        >
-                            {list.get().title().clone()}
-                        </button>
-                    }
-                }).collect_view().into_any()
-            } else {
-                view!{}.into_any()
-            }
-        }}
+        <Suspense>
+            {move || {
+                if let Some(pls) = playlists.get() {
+                    let lists = pls.lists().get();
+                    lists.into_iter().map(|list| {
+                        view!{
+                            <button
+                                class=style::context_menu
+                                on:click=move |_| {
+                                    list.update(|set_list| set_list.add_songs(selected_songs.get()));
+                                    set_show.set(false);
+                                }
+                            >
+                                {list.get().title().clone()}
+                            </button>
+                        }
+                    }).collect_view().into_any()
+                } else {
+                    view!{}.into_any()
+                }
+            }}
+        </Suspense>
         </div>
     }
 }

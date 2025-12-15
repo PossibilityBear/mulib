@@ -42,7 +42,6 @@ pub fn Song(
     #[allow(unused_must_use)] // silence SSR warn, binds event listener on csr only
     use_event_listener(song_card_ref, ev::contextmenu, move |evt| {
         evt.prevent_default();
-        leptos::logging::log!("Hello from local context menu event");
         on_context(evt)
     });
 

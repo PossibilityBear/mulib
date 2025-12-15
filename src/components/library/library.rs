@@ -95,7 +95,7 @@ pub fn CreateDropDown() -> impl IntoView {
     let song_list_source =
         use_context::<RwSignal<SongListSource>>().expect("To have found song list");
 
-    let mut playlists = expect_context::<Resource<PlaylistsSource>>();
+    let playlists = expect_context::<Resource<PlaylistsSource>>();
 
     view! {
         <div class=library::CreateDropDown>
@@ -112,19 +112,21 @@ pub fn CreateDropDown() -> impl IntoView {
                 style=move || {if !show_dd.get() {"visibility: hidden"} else {""}}
                 node_ref=dd_ref
             >
-                <button
-                    class=library::CreateDropDownOpt
-                    on:click=move |_| {
-                        set_show_dd.set(!show_dd.get());
-                        let new_pl = RwSignal::new(Playlist::default());
-                        if let Some(mut pls) = playlists.get() {
-                            pls.new_playlist(new_pl);
+                <Suspense>
+                    <button
+                        class=library::CreateDropDownOpt
+                        on:click=move |_| {
+                            set_show_dd.set(!show_dd.get());
+                            let new_pl = RwSignal::new(Playlist::default());
+                            if let Some(mut pls) = playlists.get() {
+                                pls.new_playlist(new_pl);
+                            }
+                            song_list_source.set(SongListSource::Playlist(new_pl));
                         }
-                        song_list_source.set(SongListSource::Playlist(new_pl));
-                    }
-                >
-                    New Playlist
-                </button>
+                    >
+                        New Playlist
+                    </button>
+                </Suspense>
                 <button
                     class=library::CreateDropDownOpt
                     on:click=move |_| {

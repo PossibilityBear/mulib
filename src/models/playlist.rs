@@ -145,7 +145,7 @@ impl Playlist {
         let playlist_id = self.id();
         spawn_local(async move {
             if let Err(e) = add_songs_sfn(playlist_id, song_ids).await {
-                leptos::logging::log!("error adding song to playlist {}", e);
+                log!("error adding song to playlist {}", e);
             }
         });
 
@@ -160,7 +160,7 @@ impl Playlist {
         let playlist_id = self.id();
         spawn_local(async move {
             if let Err(e) = remove_track_sfn(playlist_id, track_num as i64).await {
-                leptos::logging::log!("error removing track from playlist {}", e);
+                log!("error removing track from playlist {}", e);
             }
         });
 
@@ -209,7 +209,7 @@ impl PlaylistsSource {
                 )),
             },
             Err(e) => {
-                leptos::logging::log!("Error while loading playlists: {:?}", e);
+                log!("Error while loading playlists: {:?}", e);
                 Self {
                     lists: Arc::new(RwSignal::new(vec![])),
                 }
