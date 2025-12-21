@@ -75,12 +75,11 @@ async fn song_source_helper(source: SongListSource) -> RwSignal<Vec<Song>> {
         SongListSource::Artist(artist) => {
             RwSignal::new(get_songs_by_artist(artist.id).await.unwrap())
         }
-        SongListSource::Playlist(playlist) => playlist.get().load_songs().await,
+        SongListSource::Playlist(playlist) => playlist.get().get_load_songs().await,
         SongListSource::All => RwSignal::new(get_all_songs().await.unwrap()),
     }
 }
 
-/// The title card for a list of songs
 #[component]
 pub fn SongListTitleCard(source: RwSignal<SongListSource>) -> impl IntoView {
     view! {
@@ -97,7 +96,6 @@ pub fn SongListTitleCard(source: RwSignal<SongListSource>) -> impl IntoView {
     }
 }
 
-/// A title card containing just a title
 #[component]
 pub fn BasicListTitleCard(title: String) -> impl IntoView {
     view! {
@@ -225,6 +223,8 @@ pub fn SongList(source: RwSignal<SongListSource>) -> impl IntoView {
                         key=|(index, song)| (index.clone(), song.id)
                         children= move |(index, song)| {
                             view!{
+                                <div>
+                                <p> {index} </p>
                                 <Song song=song.clone()
                                     actions={vec![SongAction::PlayNow, SongAction::AddToQueue]}
                                     on_select=select_song(songs_res.get().unwrap(), song.clone(), index )
@@ -233,6 +233,7 @@ pub fn SongList(source: RwSignal<SongListSource>) -> impl IntoView {
                                         selected_songs.get().contains(&(index, song.clone()))
                                     })
                                 />
+                                </div>
                             }
                         }
                     />

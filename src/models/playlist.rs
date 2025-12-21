@@ -11,7 +11,7 @@ pub struct Playlist {
     id: i64,
     title: String,
     description: String,
-    songs: Vec<Song>,
+    songs: RwSignal<Vec<Song>>,
 }
 
 #[server(prefix = "/api", endpoint = "set_playlist_info")]
@@ -53,7 +53,7 @@ impl Default for Playlist {
             id: i64::default(),
             title: String::new(),
             description: String::new(),
-            songs: vec![],
+            songs: RwSignal::new(vec![]),
         }
     }
 }
@@ -77,7 +77,7 @@ impl Playlist {
             id,
             title,
             description,
-            songs,
+            songs: RwSignal::new(songs),
         }
     }
 
@@ -113,30 +113,34 @@ impl Playlist {
         });
     }
 
-    /// Loads songs from database into this playlist
-    /// can be called from a Resource to also get the result
-    /// or from an action if the goal is only to load the songs
-    /// into the struct
-    pub async fn load_songs<'a>(&'a mut self) -> Result<&'a Vec<Song>, ServerFnError> {
+    /// Loads from database into this playlist can be
+    /// called by a resource to get a RwSignal to the list of songs
+    /// that were loaded.
+    pub async fn load_songs(&self) -> RwSignal<Vec<Song>> {
         match get_songs_sfn(self.id).await {
             Ok(songs) => {
-                self.songs = songs;
-                return Ok(&self.songs);
+                self.songs.set(songs);
             }
-            Err(e) => Err(e),
+            Err(e) => log!(
+                "Error loading songs for playlist: {}, \n Error: \n {}",
+                self.title,
+                e
+            ),
         }
+        self.songs
     }
 
-    /// get a reference to the set of songs for this playlist
+    /// get RwSignal to the set of songs for this playlist
     /// NOTE: this *Does Not* load the songs from the database
     /// it only returns the songs in from the in memory struct
-    pub fn get_songs<'a>(&'a self) -> &'a Vec<Song> {
-        &self.songs
+    /// to load songs use Self.load_songs()
+    pub fn get_songs(&self) -> RwSignal<Vec<Song>> {
+        self.songs
     }
 
     /// add a song to end of the playlist.
     /// Can only be used from within a reactive context
-    pub fn add_songs(&mut self, mut songs: Vec<Song>) {
+    pub fn add_songs(&self, mut songs: Vec<Song>) {
         if songs.is_empty() {
             return;
         }
@@ -151,12 +155,12 @@ impl Playlist {
 
         // could have probably done better by implmentinging playlists
         // as a VecDequeue to have pushback method.
-        self.songs.append(&mut songs);
+        self.songs.write().append(&mut songs);
     }
 
     /// remove song based on position (track_num) in playlist.
     /// Can only be used from within a reactive context
-    pub async fn remove_track(&mut self, track_num: u32) {
+    pub fn remove_track(&self, track_num: u32) {
         let playlist_id = self.id();
         spawn_local(async move {
             if let Err(e) = remove_track_sfn(playlist_id, track_num as i64).await {
@@ -164,7 +168,7 @@ impl Playlist {
             }
         });
 
-        self.songs.remove(track_num as usize);
+        self.songs.write().remove(track_num as usize);
     }
 }
 
