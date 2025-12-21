@@ -127,3 +127,51 @@ rustflags = ['--cfg', 'getrandom_backend="wasm_js"']
     ```sh
     fish ./watch.fish
     ```
+
+## Getting browser console errors after rust toolchain changes
+```
+Uncaught (in promise) SyntaxError: redeclaration of function 
+wasm_bindgen_b4561f3c7f71394c___convert__closures_____invoke______
+mulib.js:229:10note: Previously declared at line 225, column 10mulib.js:225:10
+
+The resource at “http://127.0.0.1:3000/pkg/mulib.wasm” 
+preloaded with link preload was not used within a few seconds. 
+Make sure all attributes of the preload tag are set correctly.
+```
+This is another type of error that can happen due to wasm bindgen version
+mismatches between what is expected by Mulib and what is installed in
+the rust tool-chain. That said this one is much less consistent on
+how to resolve it, and it involves some permutation of the following steps
+
+
+to fix it we just need to get the versions to line up
+1. Clean the project
+```sh
+cargo clean
+```
+
+2. Check version of wasm-bindgen in cargo.toml:
+```sh 
+cargo pkgid wasm-bindgen
+```
+
+3. install that version of the wasm-bindgen cli
+```sh 
+cargo install -f wasm-bindgen-cli --version {{Target Version Number}} 
+```
+
+4. update the cargo-leptos installation to use freshly
+installed version of wasm-bindgen cli
+```sh
+cargo install -f cargo-leptos
+```
+
+5. Full reboot, the host machine (I believe this cleans up the 
+old versions of wasm-bindgen that were causing the issue but this
+really makes no sense to me, every time after I reboot thats when 
+the issue seems to resolve)
+
+6. Build and run the project as normal
+```sh
+fish ./watch.fish
+```
