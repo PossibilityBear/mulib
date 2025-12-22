@@ -204,7 +204,7 @@ impl Playlist {
 }
 
 #[server(prefix = "/api", endpoint = "create_new_playlist")]
-pub async fn create_playlist() -> Result<Playlist, ServerFnError> {
+async fn create_playlist() -> Result<Playlist, ServerFnError> {
     use crate::app_state::AppState;
     use crate::database::commands::playlists::create_playlist;
 
@@ -216,13 +216,25 @@ pub async fn create_playlist() -> Result<Playlist, ServerFnError> {
 }
 
 #[server(prefix = "/api", endpoint = "get_playlists")]
-pub async fn get_playlists() -> Result<Vec<Playlist>, ServerFnError> {
+async fn get_playlists() -> Result<Vec<Playlist>, ServerFnError> {
     use crate::app_state::AppState;
     use crate::database::commands::playlists::get_playlists_info;
 
     let state = use_context::<AppState>().expect("To have Found App State");
 
     let playlists = get_playlists_info(&state.db).await?;
+
+    Ok(playlists)
+}
+
+#[server(prefix = "/api", endpoint = "delete_playlist")]
+async fn delete_playlist_sfn(playlist_id: i64) -> Result<(), ServerFnError> {
+    use crate::app_state::AppState;
+    use crate::database::commands::playlists::delete_playlist;
+
+    let state = use_context::<AppState>().expect("To have Found App State");
+
+    let playlists = delete_playlist(&state.db, &playlist_id).await?;
 
     Ok(playlists)
 }
@@ -264,6 +276,22 @@ impl PlaylistsSource {
         });
     }
 
+    /// Deletes a playlist permanently
+    pub fn delete_playlist(&mut self, playlist_id: i64) {
+        spawn_local(async move {
+            if let Err(e) = delete_playlist_sfn(playlist_id).await {
+                log!(
+                    "Error trying to delete playlist {}, Error: {}",
+                    playlist_id,
+                    e
+                );
+            }
+        });
+        self.lists.update(|lists| {
+            lists.retain(|list| list.get().id() != playlist_id);
+        })
+    }
+
     /// Get the set of playlists from this source
     pub fn lists(&self) -> RwSignal<Vec<RwSignal<Playlist>>> {
         *self.lists
@@ -271,10 +299,14 @@ impl PlaylistsSource {
 
     /// Get a single playlist from this source
     pub fn list(&self, playlist_id: &i64) -> RwSignal<Playlist> {
-        (*self.lists)
+        let list_opt = (*self.lists)
             .get()
             .into_iter()
-            .find(|l| &l.get().id() == playlist_id)
-            .unwrap()
+            .find(|l| &l.get().id() == playlist_id);
+        if let Some(list) = list_opt {
+            return list;
+        } else {
+            return RwSignal::new(Playlist::default());
+        }
     }
 }

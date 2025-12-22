@@ -33,6 +33,10 @@ button.svg_button {
   border: none;
 }
 
+svg.svg_button_colorless {
+  height: 30px;
+}
+
 svg.svg_button {
   height: 30px;
   fill: colors.$AccentLight !important;

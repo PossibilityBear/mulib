@@ -23,6 +23,7 @@ import_crate_style!(style, "./src/components/song_list/song_list.module.scss");
 /// Defines the source of songs for the song list
 #[derive(Clone, PartialEq)]
 pub enum SongListSource {
+    None,
     Album(Album),
     Artist(Artist),
     Playlist(RwSignal<Playlist>),
@@ -71,6 +72,7 @@ pub async fn get_songs_by_album(album_id: i64) -> Result<Vec<Song>, ServerFnErro
 /// which is required by the Resouce
 async fn song_source_helper(source: SongListSource) -> RwSignal<Vec<Song>> {
     match source {
+        SongListSource::None => RwSignal::new(vec![]),
         SongListSource::Album(album) => RwSignal::new(get_songs_by_album(album.id).await.unwrap()),
         SongListSource::Artist(artist) => {
             RwSignal::new(get_songs_by_artist(artist.id).await.unwrap())
@@ -87,9 +89,10 @@ pub fn SongListTitleCard(source: RwSignal<SongListSource>) -> impl IntoView {
         <div class=style::SongListSourceTitleCard>
             { move || {
                 match source.get() {
+                    SongListSource::None => view!{}.into_any(),
                     SongListSource::Album(album) => view! {<BasicListTitleCard title=album.title/>}.into_any(),
                     SongListSource::Artist(artist) => view! {<BasicListTitleCard title=artist.name/>}.into_any(),
-                    SongListSource::Playlist(list) => view! {<PlaylistTitleCard playlist=list/>}.into_any(),
+                    SongListSource::Playlist(list) => view! {<PlaylistTitleCard playlist_id=Memo::new(move |_| list.get().id())/>}.into_any(),
                     SongListSource::All => view! {<BasicListTitleCard title="All Songs".to_string()/>}.into_any(),
                 }
             }}

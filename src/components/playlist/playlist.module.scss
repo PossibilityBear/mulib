@@ -44,24 +44,37 @@ div.Selected p {
   height: sizes.$AlbumArt;
 }
 
+.TitleCardDeleteIcon {
+  stroke: colors.$Light !important;
+  fill: transparent !important;
+}
+
 .TitleCardEditIcon {
   fill: colors.$Light !important;
 }
 
 div.TitleCard {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-div.EditDialog {
+div.TitleCardActions {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+div.Dialog {
   background-color: colors.$Mid;
   border-radius: sizes.$BorderRadius;
   position: absolute;
-  left: 40%;
-  top: 20%;
-  height: 40%;
-  width: 40%;
+  left: 20px;
+  right: 20px;
+  top: 20dvh;
+  height: fit-content;
+  width: auto;
   display: flex;
   flex-direction: column;
   padding-left: 20px;
@@ -69,7 +82,7 @@ div.EditDialog {
 }
 
 
-div.EditDialogInputGroup {
+div.DialogInputGroup {
   display: flex;
   flex-wrap: nowrap;
   column-gap: 10px;

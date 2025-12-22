@@ -19,16 +19,14 @@ pub fn ArtistCard(artist: Artist) -> impl IntoView {
                 }
             }
             artist::ArtistCard.to_string()
-        }>
+        }
+        on:click=move |_| {
+            list_source.set(SongListSource::Artist(artist.get()))
+        }
+        >
             <div class=artist::TextColGroup>
-                <p class=artist::Name
-                    on:click=move |_| {
-                        list_source.set(SongListSource::Artist(artist.get()))
-                    }
-                >{ move || artist.get().name}</p>
-                // <p class=playlist::SongCount>{song_count} songs</p>
+                <p class=artist::Name > { move || artist.get().name}</p>
             </div>
         </div>
     }
 }
-

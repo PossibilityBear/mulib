@@ -227,6 +227,24 @@ pub async fn create_playlist(conn: &DbConnection) -> Result<Playlist, Error> {
     ))
 }
 
+/// Delete a single playlist
+pub async fn delete_playlist(conn: &DbConnection, playlist_id: &i64) -> Result<(), Error> {
+    let _ = sqlx::query!(
+        "
+        DELETE FROM PlaylistSongs
+        WHERE playlist_id = ?;
+        DELETE FROM Playlists
+        WHERE id = ?;
+        ",
+        playlist_id,
+        playlist_id
+    )
+    .execute(&conn.db)
+    .await?;
+
+    Ok(())
+}
+
 /// allows updating the title and description for the given playlist
 pub async fn update_info(
     conn: &DbConnection,

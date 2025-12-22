@@ -2,7 +2,7 @@
 @use "../src/styles/sizes.scss" as sizes;
 
 div.songs {
-  max-height: 100%;
+  height: 100%;
   width: 100%;
   overflow-y: auto;
   /* Enable vertical scrolling when content exceeds max-height */
