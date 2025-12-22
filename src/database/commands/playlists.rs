@@ -38,16 +38,50 @@ pub async fn get_playlists_info(conn: &DbConnection) -> Result<Vec<Playlist>, Er
     Ok(playlists)
 }
 
-pub async fn remove_track(conn: &DbConnection, list_id: &i64, track: &i64) -> Result<(), Error> {
+pub async fn remove_tracks(
+    conn: &DbConnection,
+    list_id: &i64,
+    tracks: &Vec<i64>,
+) -> Result<(), Error> {
     let mut tx = conn.db.begin().await?;
-    _ = sqlx::query! {
+    // Delete the tracks
+    for track in tracks {
+        _ = sqlx::query! {
+            "
+            DELETE FROM PlaylistSongs 
+            WHERE playlist_id = ?
+                AND track_number = ? 
+            ",
+            list_id,
+            track
+        }
+        .execute(&mut *tx)
+        .await?;
+    }
+
+    // re-number the tracks
+    let _ = sqlx::query! {
         "
-        DELETE FROM PlaylistSongs 
-        WHERE playlist_id = ?
-            AND track_number = ?
+        WITH NewNumber AS (
+            SELECT
+                playlist_id,
+                track_number AS old_number,
+                -- ROW_NUMBER starts at 1, here we 
+                -- decrement it to start from 0
+                ROW_NUMBER() OVER (
+                    PARTITION BY playlist_id
+                    ORDER BY track_number
+                ) - 1 AS new_number
+            FROM PlaylistSongs
+            WHERE playlist_id = ?
+        )
+        UPDATE PlaylistSongs AS ps
+        SET track_number = nn.new_number
+        FROM NewNumber AS nn
+        WHERE ps.playlist_id = nn.playlist_id
+            AND nn.old_number = ps.track_number
         ",
-        list_id,
-        track
+        list_id
     }
     .execute(&mut *tx)
     .await?;
@@ -74,7 +108,9 @@ pub async fn add_tracks(
                 WHERE playlist_id = ?
                 GROUP BY playlist_id 
             ),
-            0
+            -- make track number start at zero
+            -- below we increment max track, so here start at -1
+            -1
             )
         ",
         list_id
@@ -147,10 +183,7 @@ pub async fn get_playlist_songs(conn: &DbConnection, list_id: &i64) -> Result<Ve
         LEFT JOIN Artists AS art ON art.Id = s.artist_id
         LEFT JOIN Artists AS AlbArt ON alb.artist_id= AlbArt.Id
         WHERE ps.playlist_id = ?
-        ORDER BY 
-            art.name COLLATE NOCASE ASC, 
-            alb.title COLLATE NOCASE ASC, 
-            s.title COLLATE NOCASE ASC 
+        ORDER BY ps.track_number
         ",
         list_id
     )

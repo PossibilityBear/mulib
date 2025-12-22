@@ -110,6 +110,11 @@ pub fn BasicListTitleCard(title: String) -> impl IntoView {
 /// a list of songs from loaded from a SongListSource
 #[component]
 pub fn SongList(source: RwSignal<SongListSource>) -> impl IntoView {
+    // NOTE: currently the order songs are returned from the database
+    // is coupled to the order that they are displayed in the UI
+    // if alternate sorting is implemented we would need to decouple
+    // so each song would have a UI sort index and a databse track number
+
     // load the songs from the source
     let songs_res = Resource::new(move || source.get(), |source| song_source_helper(source));
 
@@ -243,22 +248,26 @@ pub fn SongList(source: RwSignal<SongListSource>) -> impl IntoView {
                     set_show=show_context
                     xy_coords=context_xy
                     node_ref=context_menu_ref
-                    selected_songs=Memo::new(move |_| selected_songs.get().into_iter().map(|(_, song)| song).collect())
+                    selected_songs=selected_songs.get()
+                    source
                 />
             </Show>
         </>
     }
 }
 
-/// Context menu witha list of actions to be taken on a set of selected songs
+/// Context menu with a list of actions to be taken on a set of selected songs
 #[component]
 fn SongContextMenu(
     xy_coords: ReadSignal<(i32, i32)>,
     node_ref: NodeRef<Div>,
     set_show: RwSignal<bool>,
-    selected_songs: Memo<Vec<Song>>,
+    selected_songs: Vec<(usize, Song)>,
+    source: RwSignal<SongListSource>,
 ) -> impl IntoView {
-    let (add_to_playlist, set_add_to_playlist) = signal(false);
+    // visibility controls for playlist selection sub context menu
+    let (is_add, set_is_add) = signal(false);
+
     view! {
         <div class=style::context_menu
             node_ref=node_ref
@@ -275,13 +284,48 @@ fn SongContextMenu(
                 </button>
                 <button
                     class=style::context_menu
-                    on:click= move |_| { set_add_to_playlist.set(true); }
+                    on:click= move |_| {
+                        // expose sub-context menu for playlist selection
+                        set_is_add.set(true);
+                    }
                 >
                     Add to Playlist
                 </button>
+                {
+                let selected_songs = selected_songs.clone();
+                move || {
+                    if let SongListSource::Playlist(pl)= source.get() {
+                        let track_nums: Vec<usize> = selected_songs
+                            .clone()
+                            .into_iter()
+                            .map(|(i, _)| i)
+                            .collect();
+                        view!{
+                            <button
+                                class=style::context_menu
+                                on:click= move |_| {
+                                    pl.update(|pl| {
+                                        pl.remove_tracks(track_nums.clone());
+                                    });
+                                    set_show.set(false);
+                                }
+                            >
+                                Remove from Playlist
+                            </button>
+                        }.into_any()
+                    } else {
+                        view!{}.into_any()
+                    }
+                } }
             </div>
-            <Show when=move || add_to_playlist.get()>
-                <AddToPlaylistSubContext set_show=set_show.write_only() selected_songs/>
+            <Show when=move || is_add.get()>
+                <AddToPlaylistSubContext set_show=set_show.write_only() selected_songs={
+                    selected_songs
+                        .clone()
+                        .into_iter()
+                        .map(|(_, s)| s)
+                        .collect()
+                }/>
             </Show>
         </div>
     }
@@ -291,7 +335,7 @@ fn SongContextMenu(
 #[component]
 pub fn AddToPlaylistSubContext(
     set_show: WriteSignal<bool>,
-    selected_songs: Memo<Vec<Song>>,
+    selected_songs: Vec<Song>,
 ) -> impl IntoView {
     let playlists = expect_context::<Resource<PlaylistsSource>>();
     view! {
@@ -301,11 +345,12 @@ pub fn AddToPlaylistSubContext(
                 if let Some(pls) = playlists.get() {
                     let lists = pls.lists().get();
                     lists.into_iter().map(|list| {
+                        let selection = selected_songs.clone();
                         view!{
                             <button
                                 class=style::context_menu
                                 on:click=move |_| {
-                                    list.update(|set_list| set_list.add_songs(selected_songs.get()));
+                                    list.update(|set_list| set_list.add_songs(selection.clone()));
                                     set_show.set(false);
                                 }
                             >
