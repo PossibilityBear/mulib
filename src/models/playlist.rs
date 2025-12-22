@@ -38,12 +38,12 @@ async fn add_songs_sfn(playlist_id: i64, song_ids: Vec<i64>) -> Result<(), Serve
 }
 
 #[server]
-async fn remove_track_sfn(playlist_id: i64, track: i64) -> Result<(), ServerFnError> {
+async fn remove_track_sfn(playlist_id: i64, tracks: Vec<i64>) -> Result<(), ServerFnError> {
     use crate::app_state::AppState;
-    use crate::database::commands::playlists::remove_track;
+    use crate::database::commands::playlists::remove_tracks;
 
     let state = expect_context::<AppState>();
-    remove_track(&state.db, &playlist_id, &track).await?;
+    remove_tracks(&state.db, &playlist_id, &tracks).await?;
     Ok(())
 }
 
@@ -160,15 +160,46 @@ impl Playlist {
 
     /// remove song based on position (track_num) in playlist.
     /// Can only be used from within a reactive context
-    pub fn remove_track(&self, track_num: u32) {
+    pub fn remove_tracks(&self, track_nums: Vec<usize>) {
         let playlist_id = self.id();
+        let mut tn_clone = track_nums.clone();
+        // Ideally would have this entire method be async
+        // and called from a leptos Action, but this is
+        // fine for now.
         spawn_local(async move {
-            if let Err(e) = remove_track_sfn(playlist_id, track_num as i64).await {
+            if let Err(e) = remove_track_sfn(
+                playlist_id,
+                track_nums.into_iter().map(|n| n as i64).collect(),
+            )
+            .await
+            {
                 log!("error removing track from playlist {}", e);
             }
         });
 
-        self.songs.write().remove(track_num as usize);
+        // Given that the track order is sorted in the song list, we can then
+        // sort the track remove list and iterate just once over song list
+        // removing tracks in order O(n log(n)) + O(n)) vs O(n^2) from nested
+        // by element comparison
+        tn_clone.sort();
+        let t_start_len: usize = tn_clone.len();
+        self.songs.update(|songs| {
+            // copy songs so we have stable indicies to reference
+            for (i, _) in songs.clone().into_iter().enumerate() {
+                if let Some(remove_t) = tn_clone.first() {
+                    if &i == remove_t {
+                        // remove the track, adjusting index based on how many
+                        // tracks have already been removed.
+                        songs.remove(remove_t - (t_start_len - tn_clone.len()));
+                        // update list of tracks to remove
+                        tn_clone.remove(0);
+                    }
+                } else {
+                    // no more tracks to remove break early
+                    break;
+                }
+            }
+        });
     }
 }
 
