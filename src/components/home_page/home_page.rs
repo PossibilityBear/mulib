@@ -1,7 +1,7 @@
 use crate::components::controls::controls::Controls;
 use crate::components::library::library::LibrarySidebar;
 use crate::components::queue::queue::{Queue, SongQueueContext};
-use crate::components::song_list::song_list::{SongList, SongListSource};
+use crate::components::song_list::song_list::{SongListSource, SongListView};
 use crate::models::playlist::PlaylistsSource;
 use leptos::prelude::*;
 use stylance::import_crate_style;
@@ -32,7 +32,7 @@ pub fn HomePage() -> impl IntoView {
                     <LibrarySidebar/>
                 </div>
                 <div class=home_page::song_list>
-                    <SongList source=list_source/>
+                    <SongListView source=list_source/>
                 </div>
                 {move || {
                     if show_queue.get() {
