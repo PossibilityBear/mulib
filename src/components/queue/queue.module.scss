@@ -2,7 +2,7 @@
 @use "../src/styles/color.scss" as colors;
 @use "../src/styles/sizes.scss" as sizes;
 
-div.container{
+div.container {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -16,7 +16,7 @@ h1.Title {
   color: colors.$AccentLight
 }
 
-div.songs{
+div.songs {
   display: flex;
   flex-direction: column;
   justify-content: left;
@@ -25,3 +25,6 @@ div.songs{
   overflow-y: auto;
 }
 
+h2.Header {
+  padding-left: 1.0rem
+}
