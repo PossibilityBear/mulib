@@ -1,4 +1,4 @@
-use crate::components::queue::queue::SongQueue;
+use crate::components::queue::queue::SongQueueContext;
 use leptos::{
     ev,
     html::{self},
@@ -10,6 +10,7 @@ use leptos_use::use_event_listener;
 use stylance::import_crate_style;
 
 import_crate_style!(main_style, "./src/styles/main.module.scss");
+import_crate_style!(svg_button, "./src/styles/svg_button.module.scss");
 import_crate_style!(controls, "./src/components/controls/controls.module.scss");
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -32,7 +33,7 @@ struct SongProgress {
 }
 
 #[component]
-pub fn Controls(queue: SongQueue, show_queue: RwSignal<bool>) -> impl IntoView {
+pub fn Controls(queue: SongQueueContext, show_queue: RwSignal<bool>) -> impl IntoView {
     let audio_ref = NodeRef::<html::Audio>::new();
     let song_progress_ref = NodeRef::<html::Input>::new();
     let volume_ref = NodeRef::<html::Input>::new();
@@ -99,26 +100,26 @@ pub fn Controls(queue: SongQueue, show_queue: RwSignal<bool>) -> impl IntoView {
     };
 
     // potentially todo:
-    // Create a function like proc macro that 
-    // 1. parses svg file 
+    // Create a function like proc macro that
+    // 1. parses svg file
     // 2. strips xml info, comments, inline styles, etc
     // 3. takes a vec of classes Strings to apply to svg
     // 4. applies classes to svg
     // 5. processed svg into a view!{} macro for use in leptos
 
-    // this proc macro would save a bunch of manual work, 
-    
-    let play_svg = svg!("./public/play.svg", main_style::svg_button, controls::play_svg);
+    // this proc macro would save a bunch of manual work,
 
-    let pause_svg = svg!("./public/pause.svg", main_style::svg_button);
+    let play_svg = svg!("./public/play.svg", svg_button::svg, controls::play_svg);
 
-    let seek_forward_svg =  svg!("./public/seek-forward.svg", main_style::svg_button);
+    let pause_svg = svg!("./public/pause.svg", svg_button::svg);
 
-    let volume_svg = svg!("./public/volume-icon.svg", main_style::svg_button);
+    let seek_forward_svg = svg!("./public/seek-forward.svg", svg_button::svg);
 
-    let hide_queue_svg  = svg!("./public/hide-queue.svg", main_style::svg_button);
+    let volume_svg = svg!("./public/volume-icon.svg", svg_button::svg);
 
-    let show_queue_svg = svg!("./public/show-queue.svg", main_style::svg_button);
+    let hide_queue_svg = svg!("./public/hide-queue.svg", svg_button::svg);
+
+    let show_queue_svg = svg!("./public/show-queue.svg", svg_button::svg);
 
     // TODO: replace input type = image with buttons wrapped around svgs
     view! {
@@ -137,7 +138,7 @@ pub fn Controls(queue: SongQueue, show_queue: RwSignal<bool>) -> impl IntoView {
             </audio>
             <div class=controls::input_group>
                 // playback controls
-                <button class=main_style::svg_button
+                <button class=svg_button::svg
                     // Pause / Play
                     on:click=move |_| {
                         if queue.get_playback_state() == PlaybackState::Pause {
@@ -147,7 +148,7 @@ pub fn Controls(queue: SongQueue, show_queue: RwSignal<bool>) -> impl IntoView {
                         }
                     }
                 >
-                    <Show 
+                    <Show
                         when=move|| {queue.get_playback_state() == PlaybackState::Pause}
                         fallback=move || {pause_svg}
                     >
@@ -155,7 +156,7 @@ pub fn Controls(queue: SongQueue, show_queue: RwSignal<bool>) -> impl IntoView {
                     </Show>
                 </button>
 
-                <button class=main_style::svg_button
+                <button class=svg_button::svg
                     // skip forward
                     on:click=move |_| {
                         queue.set_playback_state(PlaybackState::SkipForward);
@@ -180,11 +181,11 @@ pub fn Controls(queue: SongQueue, show_queue: RwSignal<bool>) -> impl IntoView {
                     />
                 </div>
                 // Queue visibility toggle
-                <button class=main_style::svg_button
+                <button class=svg_button::svg
                     on:click=toggle_queue
                 >
                     <Show
-                        when= move || {show_queue.get()}    
+                        when= move || {show_queue.get()}
                         fallback=show_queue_svg
                     >
                         {hide_queue_svg}

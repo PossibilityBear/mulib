@@ -8,11 +8,12 @@ use crate::{components::album::album::AlbumCard, models::playlist::PlaylistsSour
 use leptos::html::Div;
 use leptos::prelude::*;
 use leptos_svg::svg;
-use leptos_use::{on_click_outside_with_options, OnClickOutsideOptions};
+use leptos_use::{OnClickOutsideOptions, on_click_outside_with_options};
 use stylance::import_crate_style;
 
 import_crate_style!(library, "./src/components/library/library.module.scss");
 import_crate_style!(main, "./src/styles/main.module.scss");
+import_crate_style!(svg_button, "./src/styles/svg_button.module.scss");
 
 #[derive(Clone, PartialEq, Copy)]
 pub enum Tabs {
@@ -106,7 +107,7 @@ pub fn CreateDropDown() -> impl IntoView {
                     set_show_dd.set(!show_dd.get());
                 }
             >
-                {svg!("./public/plus.svg", main::svg_button, library::CreateIcon)}
+                {svg!("./public/plus.svg", svg_button::svg, library::CreateIcon)}
             </button>
             <div class=library::CreateDropDownOpts
                 style=move || {if !show_dd.get() {"visibility: hidden"} else {""}}

@@ -61,60 +61,13 @@ div.left {
   width: 90%;
 }
 
-div.right {
-  display: flex;
-  justify-content: right;
-  width: 10%;
-}
-
 div.col_group {
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
-
-// div.col_group_art {
-//   flex-shrink: 0;
-//   align-self: flex-start;
-//   display: flex;
-//   flex-direction: column;
-// }
-
-div.actions {
-  float: right;
-}
-
 .album_art_placeholder {
   fill: colors.$Light !important;
   height: sizes.$AlbumArt;
 }
-
-
-
-// div.context_menu {
-//   position: absolute;
-//   display: flex;
-//   flex-direction: column;
-//   row-gap: 10px;
-//   background-color: colors.$MidDark;
-//   border-radius: sizes.$BorderRadius;
-//   width: 12%;
-//   padding: 20px;
-// }
-//
-//
-// button.context_menu {
-//   background: transparent;
-//   font-size: 20px;
-//   font-weight: 500;
-//   color: colors.$AccentLight;
-//   border-radius: sizes.$BorderRadius;
-//   border-color: transparent;
-//   text-align: left;
-//   padding: 10px;
-// }
-//
-// button.context_menu:hover {
-//   background-color: colors.$Mid;
-// }

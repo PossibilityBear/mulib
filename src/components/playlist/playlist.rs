@@ -1,13 +1,11 @@
-use crate::{
-    components::song_list::song_list::SongListSource,
-    models::playlist::{Playlist, PlaylistsSource},
-};
+use crate::{components::song_list::song_list::SongListSource, models::playlist::PlaylistsSource};
 use leptos::{html, prelude::*};
 use leptos_svg::svg;
 use stylance::import_crate_style;
 
 import_crate_style!(playlist, "./src/components/playlist/playlist.module.scss");
 import_crate_style!(main, "./src/styles/main.module.scss");
+import_crate_style!(svg_button, "./src/styles/svg_button.module.scss");
 
 #[component]
 pub fn PlaylistCard(playlist_id: i64) -> impl IntoView {
@@ -64,20 +62,20 @@ pub fn PlaylistTitleCard(playlist_id: Memo<i64>) -> impl IntoView {
             </div>
             <div class=playlist::TitleCardActions>
                 // button to open the edit dialog for playlist name, art, and description
-                <button class=main::svg_button
+                <button class=svg_button::svg
                     on:click= move |_| {
                         set_show_edit_dialog.set(true);
                     }
                 >
-                    {svg!("./public/edit.svg", main::svg_button_colorless, playlist::TitleCardEditIcon)}
+                    {svg!("./public/edit.svg", playlist::svg_button_colorless, playlist::TitleCardEditIcon)}
                 </button>
                 // button to delete this playlist
-                <button class=main::svg_button
+                <button class=svg_button::svg
                     on:click= move |_| {
                         set_show_delete_dialog.set(true);
                     }
                 >
-                    {svg!("./public/trash-can.svg", main::svg_button_colorless, playlist::TitleCardDeleteIcon)}
+                    {svg!("./public/trash-can.svg", playlist::svg_button_colorless, playlist::TitleCardDeleteIcon)}
                 </button>
             </div>
             <Show when=move || {show_edit_dialog.get()}>

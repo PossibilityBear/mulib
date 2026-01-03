@@ -1,7 +1,8 @@
 use crate::{
     components::{
         playlist::playlist::PlaylistTitleCard,
-        song::song::{Song, SongAction},
+        queue::queue::{QueueType, SongQueueContext},
+        song::song::Song,
     },
     models::{
         album::Album,
@@ -129,13 +130,14 @@ pub fn SongListView(source: RwSignal<SongListSource>) -> impl IntoView {
                         SongListSource::Playlist(playlist) => SongActionOpts{
                             add_to_queue: true,
                             add_to_playlist: true,
-                            remove_from_playlist: DelFromPlaylistOpt::True(playlist)
+                            remove_from_playlist: DelFromPlaylistOpt::True(playlist),
+                            remove_from_queue: DelFromQueueOpt::False
                         },
                         SongListSource::All => SongActionOpts::default(),
                     };
 
                     if let Some(songs) = songs_res.get() {
-                        view!{ <SongList songs actions/>}.into_any()
+                        view!{ <SongList songs=Memo::new(move |_| songs.get()) actions/>}.into_any()
                     } else {
                         view!{}.into_any()
                     }
@@ -149,13 +151,20 @@ pub fn SongListView(source: RwSignal<SongListSource>) -> impl IntoView {
 /// appear when context menu is opened
 #[derive(Copy, Clone, Debug)]
 pub struct SongActionOpts {
-    add_to_queue: bool,
-    add_to_playlist: bool,
-    remove_from_playlist: DelFromPlaylistOpt,
+    pub add_to_queue: bool,
+    pub add_to_playlist: bool,
+    pub remove_from_playlist: DelFromPlaylistOpt,
+    pub remove_from_queue: DelFromQueueOpt,
 }
 
 #[derive(Copy, Clone, Debug)]
-enum DelFromPlaylistOpt {
+pub enum DelFromQueueOpt {
+    False,
+    True(QueueType),
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum DelFromPlaylistOpt {
     False,
     True(RwSignal<Playlist>),
 }
@@ -166,13 +175,14 @@ impl Default for SongActionOpts {
             add_to_queue: true,
             add_to_playlist: true,
             remove_from_playlist: DelFromPlaylistOpt::False,
+            remove_from_queue: DelFromQueueOpt::False,
         }
     }
 }
 
 /// a list of songs from loaded from a SongListSource
 #[component]
-pub fn SongList(songs: RwSignal<Vec<Song>>, actions: SongActionOpts) -> impl IntoView {
+pub fn SongList(songs: Memo<Vec<Song>>, actions: SongActionOpts) -> impl IntoView {
     // NOTE: access to songs prop must be done via try variants (e.g., try_get())
     // to allow the SongList compent tb be safely wrapped in a Transition component
     // then durring the transition it won't panic becuase its trying to access the old
@@ -197,7 +207,7 @@ pub fn SongList(songs: RwSignal<Vec<Song>>, actions: SongActionOpts) -> impl Int
     });
 
     // handler for click / selection of songs in the list
-    let select_song = move |songs: RwSignal<Vec<Song>>, song: Song, index: usize| {
+    let select_song = move |songs: Memo<Vec<Song>>, song: Song, index: usize| {
         move |ev: MouseEvent| {
             if let Some((last_sel_pos, _last_sel)) = selected_songs.get().iter().last()
                 && ev.shift_key()
@@ -295,7 +305,6 @@ pub fn SongList(songs: RwSignal<Vec<Song>>, actions: SongActionOpts) -> impl Int
                 children= move |(index, song)| {
                     view!{
                         <Song song=song.clone()
-                            actions={vec![SongAction::PlayNow, SongAction::AddToQueue]}
                             on_select=select_song(songs, song.clone(), index )
                             on_context=on_contextmenu(song.clone(), index)
                             is_selected=Memo::new(move |_| {
@@ -328,7 +337,7 @@ fn SongContextMenu(
     actions: SongActionOpts,
 ) -> impl IntoView {
     // visibility controls for playlist selection sub context menu
-    let (is_add, set_is_add) = signal(false);
+    let (show_add_pl, set_show_add_pl) = signal(false);
 
     view! {
         <div class=style::context_menu
@@ -337,10 +346,13 @@ fn SongContextMenu(
         >
             <div class=style::sub_context_menu>
                 { if actions.add_to_queue {
+                    let selected_songs = selected_songs.clone();
                     view!{
                         <button
                             class=style::context_menu
                             on:click= move |_| {
+                                let queue = expect_context::<SongQueueContext>();
+                                queue.push_back(selected_songs.clone().into_iter().map(|(_, s)| s).collect());
                                 set_show.set(false);
                             }
                         >
@@ -357,7 +369,7 @@ fn SongContextMenu(
                             class=style::context_menu
                             on:click= move |_| {
                                 // expose sub-context menu for playlist selection
-                                set_is_add.set(true);
+                                set_show_add_pl.set(true);
                             }
                         >
                             Add to Playlist
@@ -390,8 +402,29 @@ fn SongContextMenu(
                     view!{}.into_any()
                 }}
 
+                { if let DelFromQueueOpt::True(qt) = actions.remove_from_queue {
+                    let track_nums: Vec<usize> = selected_songs
+                        .clone()
+                        .into_iter()
+                        .map(|(i, _)| i)
+                        .collect();
+                    view!{
+                        <button
+                            class=style::context_menu
+                            on:click= move |_| {
+                                let queue = expect_context::<SongQueueContext>();
+                                queue.remove_songs(qt, track_nums.clone());
+                                set_show.set(false);
+                            }
+                        >
+                            Remove from Queue
+                        </button>
+                    }.into_any()
+                } else {
+                    view!{}.into_any()
+                }}
             </div>
-            <Show when=move || is_add.get()>
+            <Show when=move || show_add_pl.get()>
                 <AddToPlaylistSubContext set_show=set_show.write_only() selected_songs={
                     selected_songs
                         .clone()

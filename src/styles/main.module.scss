@@ -21,28 +21,6 @@ label {
   font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 }
 
-/////////////////////////////// SVG Buttons ////////////////////////////////////
-// default icon buttons sizing 
-input[type=image] {
-  height: 1rlh;
-}
-
-button.svg_button {
-  height: fit-content;
-  background-color: transparent;
-  border: none;
-}
-
-svg.svg_button_colorless {
-  height: 30px;
-}
-
-svg.svg_button {
-  height: 30px;
-  fill: colors.$AccentLight !important;
-}
-
-
 ////////////////// Styling the range track for range inputs ////////////////////
 $Unfilled: colors.$Light;
 $Filled: colors.$AccentStrong;
