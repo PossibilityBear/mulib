@@ -1,0 +1,17 @@
+@use "../src/styles/color.scss" as colors;
+
+// default icon buttons sizing 
+input[type=image] {
+  height: 1rlh;
+}
+
+button.svg {
+  height: fit-content;
+  background-color: transparent;
+  border: none;
+}
+
+svg.svg {
+  height: 30px;
+  fill: colors.$AccentLight !important;
+}

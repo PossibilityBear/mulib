@@ -10,6 +10,7 @@ use leptos_use::use_event_listener;
 use stylance::import_crate_style;
 
 import_crate_style!(main_style, "./src/styles/main.module.scss");
+import_crate_style!(svg_button, "./src/styles/svg_button.module.scss");
 import_crate_style!(controls, "./src/components/controls/controls.module.scss");
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -108,21 +109,17 @@ pub fn Controls(queue: SongQueueContext, show_queue: RwSignal<bool>) -> impl Int
 
     // this proc macro would save a bunch of manual work,
 
-    let play_svg = svg!(
-        "./public/play.svg",
-        main_style::svg_button,
-        controls::play_svg
-    );
+    let play_svg = svg!("./public/play.svg", svg_button::svg, controls::play_svg);
 
-    let pause_svg = svg!("./public/pause.svg", main_style::svg_button);
+    let pause_svg = svg!("./public/pause.svg", svg_button::svg);
 
-    let seek_forward_svg = svg!("./public/seek-forward.svg", main_style::svg_button);
+    let seek_forward_svg = svg!("./public/seek-forward.svg", svg_button::svg);
 
-    let volume_svg = svg!("./public/volume-icon.svg", main_style::svg_button);
+    let volume_svg = svg!("./public/volume-icon.svg", svg_button::svg);
 
-    let hide_queue_svg = svg!("./public/hide-queue.svg", main_style::svg_button);
+    let hide_queue_svg = svg!("./public/hide-queue.svg", svg_button::svg);
 
-    let show_queue_svg = svg!("./public/show-queue.svg", main_style::svg_button);
+    let show_queue_svg = svg!("./public/show-queue.svg", svg_button::svg);
 
     // TODO: replace input type = image with buttons wrapped around svgs
     view! {
@@ -141,7 +138,7 @@ pub fn Controls(queue: SongQueueContext, show_queue: RwSignal<bool>) -> impl Int
             </audio>
             <div class=controls::input_group>
                 // playback controls
-                <button class=main_style::svg_button
+                <button class=svg_button::svg
                     // Pause / Play
                     on:click=move |_| {
                         if queue.get_playback_state() == PlaybackState::Pause {
@@ -159,7 +156,7 @@ pub fn Controls(queue: SongQueueContext, show_queue: RwSignal<bool>) -> impl Int
                     </Show>
                 </button>
 
-                <button class=main_style::svg_button
+                <button class=svg_button::svg
                     // skip forward
                     on:click=move |_| {
                         queue.set_playback_state(PlaybackState::SkipForward);
@@ -184,7 +181,7 @@ pub fn Controls(queue: SongQueueContext, show_queue: RwSignal<bool>) -> impl Int
                     />
                 </div>
                 // Queue visibility toggle
-                <button class=main_style::svg_button
+                <button class=svg_button::svg
                     on:click=toggle_queue
                 >
                     <Show
